@@ -12,6 +12,8 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса глав�
 HBITMAP hbm;
 BITMAP bmi;
 
+TCHAR ChildName[] = _T("1");
+
 RGBQUAD rgb;
 
 RECT rc, histRc;
@@ -21,6 +23,7 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK    ChildProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 void ReadBMP(char* filename);
 
@@ -69,6 +72,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
+    WNDCLASSEXW wc;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
@@ -84,7 +88,9 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-    return RegisterClassExW(&wcex);
+    if (RegisterClassEx(&wcex)) return 0;
+
+    return 0;
 }
 
 //
@@ -209,7 +215,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 break;
             case IDM_EDIT_FADING:
-                MessageBox(NULL, L"Fading", L"OK", MB_OK); // TODO
+                CreateWindow(ChildName, _T("2"), WS_VISIBLE, 10, 10, 150, 20, hWnd, 0, hInst, 0);
                 // Create function ChildProc same as WndProc, add handler, register and so on
                 break;
             case IDM_EXIT:
@@ -268,6 +274,21 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+LRESULT CALLBACK ChildProc(HWND hWnd, UINT message,WPARAM wParam, LPARAM lParam) {
+
+    UNREFERENCED_PARAMETER(lParam);
+
+    switch (message)
+    {
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
 }
 
 void ReadBMP(char* filename) {
