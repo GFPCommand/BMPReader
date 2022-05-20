@@ -1,4 +1,4 @@
-﻿#define CRT_SECURE_NO_WARNINGS
+﻿#define _CRT_SECURE_NO_WARNINGS
 #include "framework.h"
 #include "WindowsProject1.h"
 
@@ -9,8 +9,10 @@ HINSTANCE hInst;                                // текущий экземпл
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 
-HBITMAP hbm;
+HBITMAP hbm1, hbm2;
 BITMAP bmi;
+
+std::wstring tmp_file;
 
 TCHAR ChildName[] = _T("1");
 
@@ -18,14 +20,18 @@ RGBQUAD rgb;
 
 RECT rc, histRc;
 
+void Fading(const char*);
+void Brightness(const char*);
+void Grayscale(const char*);
+void Negative(const char*);
+
+
 // Отправить объявления функций, включенных в этот модуль кода:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK    ChildProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
-void ReadBMP(char* filename);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -169,22 +175,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (GetOpenFileName(&ofn))
                 {
-                    //std::wstring ws(szFileName);
+                    std::wstring ws = szFileName;
 
-                    //std::string str(ws.begin(), ws.end());
+                    tmp_file = ws;
 
-                    //const char* file = str.c_str();
-
-                    
-
-                    hbm = (HBITMAP)LoadImage(0, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+                    hbm1 = (HBITMAP)LoadImage(0, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
                     RedrawWindow(hWnd, &rc, NULL, RDW_INVALIDATE);
-
-                    MessageBox(NULL, szFileName, L"Open file", MB_OK);
-                    //char* filename = const_cast<char*>(file);
-
-                    //ReadBMP(filename);
                 }
                 break;
             case IDM_SAVE:
@@ -214,9 +211,60 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
 
                 break;
-            case IDM_EDIT_FADING:
-                CreateWindow(ChildName, _T("2"), WS_VISIBLE, 10, 10, 150, 20, hWnd, 0, hInst, 0);
-                // Create function ChildProc same as WndProc, add handler, register and so on
+            case ID_EDIT_FADING:
+                if (tmp_file == L"") {
+                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
+                    break;
+                }
+                else {
+                    std::string str(tmp_file.begin(), tmp_file.end());
+
+                    const char* filename = str.c_str();
+
+                    Fading(filename);
+                    break;
+                }
+            case ID_EDIT_BRIGHTNESS:
+                if (tmp_file == L"") {
+                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
+                    break;
+                }
+                else {
+                    std::string str(tmp_file.begin(), tmp_file.end());
+
+                    const char* filename = str.c_str();
+
+                    Brightness(filename);
+                    break;
+                }
+                break;
+            case ID_EDIT_GRAYSCALE:
+                if (tmp_file == L"") {
+                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
+                    break;
+                }
+                else {
+                    std::string str(tmp_file.begin(), tmp_file.end());
+
+                    const char* filename = str.c_str();
+
+                    Grayscale(filename);
+                    break;
+                }
+                break;
+            case ID_EDIT_NEGATIVE:
+                if (tmp_file == L"") {
+                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
+                    break;
+                }
+                else {
+                    std::string str(tmp_file.begin(), tmp_file.end());
+
+                    const char* filename = str.c_str();
+
+                    Negative(filename);
+                    break;
+                }
                 break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
@@ -229,15 +277,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
     {
         
-        GetObject(hbm, sizeof(BITMAP), &bmi);
+        GetObject(hbm1, sizeof(BITMAP), &bmi);
         
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
         HDC cdc = CreateCompatibleDC(hdc);
-        SelectObject(cdc, hbm);
+        SelectObject(cdc, hbm1);
         GetClientRect(hWnd, &rc);
         GetClientRect(hWnd, &histRc);
-        SetRect(&histRc, 600, 16, 1000, 400);
+        SetRect(&histRc, 600, 16, 1112, 512);
         SetRect(&rc, 16, 16, 512, 512);
         SetStretchBltMode(hdc, HALFTONE);
         StretchBlt(hdc, 16,16,rc.right, rc.bottom, cdc, 0,0,bmi.bmWidth, bmi.bmHeight, SRCCOPY);
@@ -291,11 +339,7 @@ LRESULT CALLBACK ChildProc(HWND hWnd, UINT message,WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-void ReadBMP(char* filename) {
-    hbm = (HBITMAP)LoadImage(0, (LPCWSTR)filename, IMAGE_BITMAP, 32, 32, LR_LOADFROMFILE);
-    GetObject(hbm, sizeof(BITMAP), &bmi);
-
-#pragma warning(suppress : 4996)
+void Fading(const char* filename) {
     FILE* f = fopen(filename, "rb");
 
     if (f == NULL) throw "Argument Exception";
@@ -309,5 +353,154 @@ void ReadBMP(char* filename) {
 
     int row_padded = (width * 3 + 3) & (~3);
     unsigned char* data = new unsigned char[row_padded];
-    //unsigned char tmp;
+
+    std::remove("fading.bmp");
+    FILE* file = fopen("fading.bmp", "ab");
+    if (file == NULL) throw "Argument Exception";
+
+    fwrite(info, sizeof(unsigned char), 54, file);
+
+    for (int i = 0; i < height; i++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int j = 0; j < width * 3; j += 3)
+        {
+            int k = (0.3 * (int)data[j] + 0.59 * (int)data[j + 1] + 0.11 * (int)data[j + 2]);
+            data[j] = k;    //blue
+            data[j + 1] = k; //green
+            data[j + 2] = k; //red
+        }
+        fwrite(data, sizeof(unsigned char), row_padded, file);
+    }
+
+    fclose(f);
+    fclose(file);
+}
+
+void Brightness(const char* filename) {
+    FILE* f = fopen(filename, "rb");
+
+    if (f == NULL) throw "Argument Exception";
+
+    unsigned char info[54];
+
+    fread(info, sizeof(unsigned char), 54, f);
+
+    int width = *(int*)&info[18];
+    int height = *(int*)&info[22];
+
+    int row_padded = (width * 3 + 3) & (~3);
+    unsigned char* data = new unsigned char[row_padded];
+
+    std::remove("brightness.bmp");
+    FILE* file = fopen("brightness.bmp", "ab");
+    if (file == NULL) throw "Argument Exception";
+
+    fwrite(info, sizeof(unsigned char), 54, file);
+
+    for (int i = 0; i < height; i++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int j = 0; j < width * 3; j += 3)
+        {
+            int tmp;
+
+            tmp = data[j];
+            tmp += 50 * 128 / 100;
+            if (tmp > 255) tmp = 255;
+            if (tmp < 0) tmp = 0;
+            data[j] = tmp;
+
+            tmp = data[j+1];
+            tmp += 50 * 128 / 100;
+            if (tmp > 255) tmp = 255;
+            if (tmp < 0) tmp = 0;
+            data[j+1] = tmp;
+
+            tmp = data[j+2];
+            tmp += 50 * 128 / 100;
+            if (tmp > 255) tmp = 255;
+            if (tmp < 0) tmp = 0;
+            data[j+2] = tmp;
+        }
+        fwrite(data, sizeof(unsigned char), row_padded, file);
+    }
+
+    fclose(f);
+    fclose(file);
+}
+
+void Grayscale(const char* filename) {
+    FILE* f = fopen(filename, "rb");
+
+    if (f == NULL) throw "Argument Exception";
+
+    unsigned char info[54];
+
+    fread(info, sizeof(unsigned char), 54, f);
+
+    int width = *(int*)&info[18];
+    int height = *(int*)&info[22];
+
+    int row_padded = (width * 3 + 3) & (~3);
+    unsigned char* data = new unsigned char[row_padded];
+
+    std::remove("grayscale.bmp");
+    FILE* file = fopen("grayscale.bmp", "ab");
+    if (file == NULL) throw "Argument Exception";
+
+    fwrite(info, sizeof(unsigned char), 54, file);
+
+    for (int i = 0; i < height; i++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int j = 0; j < width * 3; j += 3)
+        {
+            int k = ((int)data[j] + (int)data[j + 1] + (int)data[j + 2]) / 3;
+            data[j] = k;    //blue
+            data[j + 1] = k; //green
+            data[j + 2] = k; //red
+        }
+        fwrite(data, sizeof(unsigned char), row_padded, file);
+    }
+
+    fclose(f);
+    fclose(file);
+}
+
+void Negative(const char* filename) {
+    FILE* f = fopen(filename, "rb");
+
+    if (f == NULL) throw "Argument Exception";
+
+    unsigned char info[54];
+
+    fread(info, sizeof(unsigned char), 54, f);
+
+    int width = *(int*)&info[18];
+    int height = *(int*)&info[22];
+
+    int row_padded = (width * 3 + 3) & (~3);
+    unsigned char* data = new unsigned char[row_padded];
+
+    std::remove("negative.bmp");
+    FILE* file = fopen("negative.bmp", "ab");
+    if (file == NULL) throw "Argument Exception";
+
+    fwrite(info, sizeof(unsigned char), 54, file);
+
+    for (int i = 0; i < height; i++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int j = 0; j < width * 3; j += 3)
+        {
+            data[j] = (255 - (int)data[j]);    //blue
+            data[j + 1] = (255 - (int)data[j + 1]); //green
+            data[j + 2] = (255 - (int)data[j + 2]); //red
+        }
+        fwrite(data, sizeof(unsigned char), row_padded, file);
+    }
+
+    fclose(f);
+    fclose(file);
 }

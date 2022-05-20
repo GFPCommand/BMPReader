@@ -21,6 +21,10 @@
 #define IDM_SAVEAS                      32777
 #define ID_EDIT_FADING                  32778
 #define IDM_EDIT_FADING                 32779
+#define ID_EDIT_LIGHT                   32780
+#define ID_EDIT_BRIGHTNESS              32781
+#define ID_EDIT_GRAYSCALE               32782
+#define ID_EDIT_NEGATIVE                32783
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -29,7 +33,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        129
-#define _APS_NEXT_COMMAND_VALUE         32780
+#define _APS_NEXT_COMMAND_VALUE         32784
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110
 #endif

@@ -14,6 +14,8 @@
 #include <memory.h>
 #include <tchar.h>
 
+#include <algorithm>
+
 #include <commdlg.h>
 #include <fstream>
 #include <regex>
