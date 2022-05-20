@@ -14,16 +14,22 @@ BITMAP bmi;
 
 std::wstring tmp_file;
 
+bool isLoaded = false;
+
+int H[256] = { 0 };
+
 TCHAR ChildName[] = _T("1");
 
 RGBQUAD rgb;
 
 RECT rc, histRc;
 
-void Fading(const char*);
+BOOL Line(HDC hdc, int x1, int y1, int x2, int y2);
+
 void Brightness(const char*);
 void Grayscale(const char*);
 void Negative(const char*);
+void Histogram(const char*);
 
 
 // Отправить объявления функций, включенных в этот модуль кода:
@@ -182,6 +188,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     hbm1 = (HBITMAP)LoadImage(0, szFileName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
                     RedrawWindow(hWnd, &rc, NULL, RDW_INVALIDATE);
+
+                    std::string str(tmp_file.begin(), tmp_file.end());
+
+                    const char* filename = str.c_str();
+
+                    Histogram(filename);
+
+                    isLoaded = true;
+
+                    RedrawWindow(hWnd, &histRc, NULL, RDW_INVALIDATE);
                 }
                 break;
             case IDM_SAVE:
@@ -211,19 +227,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
 
                 break;
-            case ID_EDIT_FADING:
-                if (tmp_file == L"") {
-                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
-                    break;
-                }
-                else {
-                    std::string str(tmp_file.begin(), tmp_file.end());
-
-                    const char* filename = str.c_str();
-
-                    Fading(filename);
-                    break;
-                }
             case ID_EDIT_BRIGHTNESS:
                 if (tmp_file == L"") {
                     MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
@@ -282,6 +285,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
         HDC cdc = CreateCompatibleDC(hdc);
+        HBRUSH hbr = CreateSolidBrush(RGB(0, 0, 0));
         SelectObject(cdc, hbm1);
         GetClientRect(hWnd, &rc);
         GetClientRect(hWnd, &histRc);
@@ -292,6 +296,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         FrameRect(hdc, &rc, HBRUSH(CreateSolidBrush(RGB(0, 0, 0))));
         FrameRect(hdc, &histRc, HBRUSH(CreateSolidBrush(RGB(0, 0, 0))));
         DeleteDC(cdc);
+        if (isLoaded) {
+            
+            SelectObject(hdc, hbr);
+
+            for (int i = 0; i < 256; i++)
+            {
+                H[i] /= 100;
+                Line(hdc, 601 + i + 50, 512, 601 + i + 50, (512 - H[i]));
+            }
+        }
         EndPaint(hWnd, &ps);
     }
         break;
@@ -339,42 +353,48 @@ LRESULT CALLBACK ChildProc(HWND hWnd, UINT message,WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-void Fading(const char* filename) {
-    FILE* f = fopen(filename, "rb");
+//void Fading(const char* filename) {
+//    FILE* f = fopen(filename, "rb");
+//
+//    if (f == NULL) throw "Argument Exception";
+//
+//    unsigned char info[54];
+//
+//    fread(info, sizeof(unsigned char), 54, f);
+//
+//    int width = *(int*)&info[18];
+//    int height = *(int*)&info[22];
+//
+//    int row_padded = (width * 3 + 3) & (~3);
+//    unsigned char* data = new unsigned char[row_padded];
+//
+//    std::remove("fading.bmp");
+//    FILE* file = fopen("fading.bmp", "ab");
+//    if (file == NULL) throw "Argument Exception";
+//
+//    fwrite(info, sizeof(unsigned char), 54, file);
+//
+//    for (int i = 0; i < height; i++)
+//    {
+//        fread(data, sizeof(unsigned char), row_padded, f);
+//        for (int j = 0; j < width * 3; j += 3)
+//        {
+//            int k = (0.3 * (int)data[j] + 0.59 * (int)data[j + 1] + 0.11 * (int)data[j + 2]);
+//            data[j] = k;    //blue
+//            data[j + 1] = k; //green
+//            data[j + 2] = k; //red
+//        }
+//        fwrite(data, sizeof(unsigned char), row_padded, file);
+//    }
+//
+//    fclose(f);
+//    fclose(file);
+//}
 
-    if (f == NULL) throw "Argument Exception";
-
-    unsigned char info[54];
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
-
-    int row_padded = (width * 3 + 3) & (~3);
-    unsigned char* data = new unsigned char[row_padded];
-
-    std::remove("fading.bmp");
-    FILE* file = fopen("fading.bmp", "ab");
-    if (file == NULL) throw "Argument Exception";
-
-    fwrite(info, sizeof(unsigned char), 54, file);
-
-    for (int i = 0; i < height; i++)
-    {
-        fread(data, sizeof(unsigned char), row_padded, f);
-        for (int j = 0; j < width * 3; j += 3)
-        {
-            int k = (0.3 * (int)data[j] + 0.59 * (int)data[j + 1] + 0.11 * (int)data[j + 2]);
-            data[j] = k;    //blue
-            data[j + 1] = k; //green
-            data[j + 2] = k; //red
-        }
-        fwrite(data, sizeof(unsigned char), row_padded, file);
-    }
-
-    fclose(f);
-    fclose(file);
+BOOL Line(HDC hdc, int x1, int y1, int x2, int y2)
+{
+    MoveToEx(hdc, x1, y1, NULL); //сделать текущими координаты x1, y1
+    return LineTo(hdc, x2, y2); //нарисовать линию
 }
 
 void Brightness(const char* filename) {
@@ -411,17 +431,17 @@ void Brightness(const char* filename) {
             if (tmp < 0) tmp = 0;
             data[j] = tmp;
 
-            tmp = data[j+1];
+            tmp = data[j + 1];
             tmp += 50 * 128 / 100;
             if (tmp > 255) tmp = 255;
             if (tmp < 0) tmp = 0;
-            data[j+1] = tmp;
+            data[j + 1] = tmp;
 
-            tmp = data[j+2];
+            tmp = data[j + 2];
             tmp += 50 * 128 / 100;
             if (tmp > 255) tmp = 255;
             if (tmp < 0) tmp = 0;
-            data[j+2] = tmp;
+            data[j + 2] = tmp;
         }
         fwrite(data, sizeof(unsigned char), row_padded, file);
     }
@@ -503,4 +523,33 @@ void Negative(const char* filename) {
 
     fclose(f);
     fclose(file);
+}
+
+void Histogram(const char* filename) {
+    FILE* f = fopen(filename, "rb");
+
+    if (f == NULL) throw "Argument Exception";
+
+    unsigned char info[54];
+
+    fread(info, sizeof(unsigned char), 54, f);
+
+    int width = *(int*)&info[18];
+    int height = *(int*)&info[22];
+
+    int row_padded = (width * 3 + 3) & (~3);
+    unsigned char* data = new unsigned char[row_padded];
+
+    for (int k = 0; k < 256; k++)
+    {
+        for (int y = 0; y < height; y++)
+        {
+            fread(data, sizeof(unsigned char), row_padded, f);
+            for (int x = 0; x < width * 3; x += 3)
+            {
+                int c = (0.3 * (int)data[x] + 0.59 * (int)data[x + 1] + 0.11 * (int)data[x + 2]);
+                if (c == k) H[k]++;
+            }
+        }
+    }
 }
