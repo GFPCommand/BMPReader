@@ -1,5 +1,4 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
-#include "framework.h"
+﻿#include "framework.h"
 #include "WindowsProject1.h"
 
 #define MAX_LOADSTRING 100
@@ -16,9 +15,9 @@ std::wstring tmp_file;
 
 bool isLoaded = false;
 
-int H[256] = { 0 };
+ImageEdit img;
 
-TCHAR ChildName[] = _T("1");
+wchar_t ChildName[] = _T("1");
 
 RGBQUAD rgb;
 
@@ -26,18 +25,13 @@ RECT rc, histRc;
 
 BOOL Line(HDC hdc, int x1, int y1, int x2, int y2);
 
-void Brightness(const char*);
-void Grayscale(const char*);
-void Negative(const char*);
-void Histogram(const char*);
-
-
 // Отправить объявления функций, включенных в этот модуль кода:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK    ChildProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK    Hist(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    Bright(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -76,11 +70,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     return (int) msg.wParam;
 }
 
-//
-//  ФУНКЦИЯ: MyRegisterClass()
-//
-//  ЦЕЛЬ: Регистрирует класс окна.
-//
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
@@ -105,16 +94,6 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return 0;
 }
 
-//
-//   ФУНКЦИЯ: InitInstance(HINSTANCE, int)
-//
-//   ЦЕЛЬ: Сохраняет маркер экземпляра и создает главное окно
-//
-//   КОММЕНТАРИИ:
-//
-//        В этой функции маркер экземпляра сохраняется в глобальной переменной, а также
-//        создается и выводится главное окно программы.
-//
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
@@ -133,16 +112,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-//
-//  ФУНКЦИЯ: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  ЦЕЛЬ: Обрабатывает сообщения в главном окне.
-//
-//  WM_COMMAND  - обработать меню приложения
-//  WM_PAINT    - Отрисовка главного окна
-//  WM_DESTROY  - отправить сообщение о выходе и вернуться
-//
-//
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     static HWND hBtn; // дескриптор кнопки
@@ -193,7 +162,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                     const char* filename = str.c_str();
 
-                    Histogram(filename);
+                    img.Histogram(filename);
 
                     isLoaded = true;
 
@@ -233,11 +202,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     break;
                 }
                 else {
-                    std::string str(tmp_file.begin(), tmp_file.end());
-
-                    const char* filename = str.c_str();
-
-                    Brightness(filename);
+                    DialogBox(hInst, MAKEINTRESOURCE(IDD_BRIGHTNESS), hWnd, Bright);
                     break;
                 }
                 break;
@@ -251,7 +216,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                     const char* filename = str.c_str();
 
-                    Grayscale(filename);
+                    img.Grayscale(filename);
                     break;
                 }
                 break;
@@ -265,9 +230,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                     const char* filename = str.c_str();
 
-                    Negative(filename);
+                    img.Negative(filename);
                     break;
                 }
+                break;
+            case ID_IMAGE_COLORHISTOGRAM:
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_HISTOGRAM), hWnd, Hist);
                 break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
@@ -302,8 +270,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             for (int i = 0; i < 256; i++)
             {
-                H[i] /= 100;
-                Line(hdc, 601 + i + 50, 512, 601 + i + 50, (512 - H[i]));
+                img.H[i] /= 200;
+                Line(hdc, 601 + i + 50, 512, 601 + i + 50, (512 - img.H[i]));
             }
         }
         EndPaint(hWnd, &ps);
@@ -338,218 +306,69 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-LRESULT CALLBACK ChildProc(HWND hWnd, UINT message,WPARAM wParam, LPARAM lParam) {
-
+INT_PTR CALLBACK Hist(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
     UNREFERENCED_PARAMETER(lParam);
-
     switch (message)
     {
-    case WM_DESTROY:
-        PostQuitMessage(0);
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
         break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
     }
-    return 0;
+    return (INT_PTR)FALSE;
 }
 
-//void Fading(const char* filename) {
-//    FILE* f = fopen(filename, "rb");
-//
-//    if (f == NULL) throw "Argument Exception";
-//
-//    unsigned char info[54];
-//
-//    fread(info, sizeof(unsigned char), 54, f);
-//
-//    int width = *(int*)&info[18];
-//    int height = *(int*)&info[22];
-//
-//    int row_padded = (width * 3 + 3) & (~3);
-//    unsigned char* data = new unsigned char[row_padded];
-//
-//    std::remove("fading.bmp");
-//    FILE* file = fopen("fading.bmp", "ab");
-//    if (file == NULL) throw "Argument Exception";
-//
-//    fwrite(info, sizeof(unsigned char), 54, file);
-//
-//    for (int i = 0; i < height; i++)
-//    {
-//        fread(data, sizeof(unsigned char), row_padded, f);
-//        for (int j = 0; j < width * 3; j += 3)
-//        {
-//            int k = (0.3 * (int)data[j] + 0.59 * (int)data[j + 1] + 0.11 * (int)data[j + 2]);
-//            data[j] = k;    //blue
-//            data[j + 1] = k; //green
-//            data[j + 2] = k; //red
-//        }
-//        fwrite(data, sizeof(unsigned char), row_padded, file);
-//    }
-//
-//    fclose(f);
-//    fclose(file);
-//}
+INT_PTR CALLBACK Bright(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDC_APPLY)
+        {
+            HWND check = GetDlgItem(hDlg, IDC_CHECK_MODE);
+            HWND input = GetDlgItem(hDlg, IDC_COEFF);
+
+            bool isMinus = (SendMessage(check, BM_GETCHECK, 0, 0) == BST_CHECKED) ? true : false;
+            
+            std::string str(tmp_file.begin(), tmp_file.end());
+
+            const char* filename = str.c_str();
+
+            wchar_t str_coeff[5] = { 0 };
+
+            int coeff = 0;
+            GetWindowText(input, str_coeff, 5);
+            coeff = _wtoi(str_coeff);
+
+            if (isMinus) coeff *= -1;
+
+            img.Brightness(filename, coeff);
+
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        else if (LOWORD(wParam) == IDCANCEL || LOWORD(wParam) == IDC_CANCEL) {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
 
 BOOL Line(HDC hdc, int x1, int y1, int x2, int y2)
 {
     MoveToEx(hdc, x1, y1, NULL); //сделать текущими координаты x1, y1
     return LineTo(hdc, x2, y2); //нарисовать линию
-}
-
-void Brightness(const char* filename) {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) throw "Argument Exception";
-
-    unsigned char info[54];
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
-
-    int row_padded = (width * 3 + 3) & (~3);
-    unsigned char* data = new unsigned char[row_padded];
-
-    std::remove("brightness.bmp");
-    FILE* file = fopen("brightness.bmp", "ab");
-    if (file == NULL) throw "Argument Exception";
-
-    fwrite(info, sizeof(unsigned char), 54, file);
-
-    for (int i = 0; i < height; i++)
-    {
-        fread(data, sizeof(unsigned char), row_padded, f);
-        for (int j = 0; j < width * 3; j += 3)
-        {
-            int tmp;
-
-            tmp = data[j];
-            tmp += 50 * 128 / 100;
-            if (tmp > 255) tmp = 255;
-            if (tmp < 0) tmp = 0;
-            data[j] = tmp;
-
-            tmp = data[j + 1];
-            tmp += 50 * 128 / 100;
-            if (tmp > 255) tmp = 255;
-            if (tmp < 0) tmp = 0;
-            data[j + 1] = tmp;
-
-            tmp = data[j + 2];
-            tmp += 50 * 128 / 100;
-            if (tmp > 255) tmp = 255;
-            if (tmp < 0) tmp = 0;
-            data[j + 2] = tmp;
-        }
-        fwrite(data, sizeof(unsigned char), row_padded, file);
-    }
-
-    fclose(f);
-    fclose(file);
-}
-
-void Grayscale(const char* filename) {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) throw "Argument Exception";
-
-    unsigned char info[54];
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
-
-    int row_padded = (width * 3 + 3) & (~3);
-    unsigned char* data = new unsigned char[row_padded];
-
-    std::remove("grayscale.bmp");
-    FILE* file = fopen("grayscale.bmp", "ab");
-    if (file == NULL) throw "Argument Exception";
-
-    fwrite(info, sizeof(unsigned char), 54, file);
-
-    for (int i = 0; i < height; i++)
-    {
-        fread(data, sizeof(unsigned char), row_padded, f);
-        for (int j = 0; j < width * 3; j += 3)
-        {
-            int k = ((int)data[j] + (int)data[j + 1] + (int)data[j + 2]) / 3;
-            data[j] = k;    //blue
-            data[j + 1] = k; //green
-            data[j + 2] = k; //red
-        }
-        fwrite(data, sizeof(unsigned char), row_padded, file);
-    }
-
-    fclose(f);
-    fclose(file);
-}
-
-void Negative(const char* filename) {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) throw "Argument Exception";
-
-    unsigned char info[54];
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
-
-    int row_padded = (width * 3 + 3) & (~3);
-    unsigned char* data = new unsigned char[row_padded];
-
-    std::remove("negative.bmp");
-    FILE* file = fopen("negative.bmp", "ab");
-    if (file == NULL) throw "Argument Exception";
-
-    fwrite(info, sizeof(unsigned char), 54, file);
-
-    for (int i = 0; i < height; i++)
-    {
-        fread(data, sizeof(unsigned char), row_padded, f);
-        for (int j = 0; j < width * 3; j += 3)
-        {
-            data[j] = (255 - (int)data[j]);    //blue
-            data[j + 1] = (255 - (int)data[j + 1]); //green
-            data[j + 2] = (255 - (int)data[j + 2]); //red
-        }
-        fwrite(data, sizeof(unsigned char), row_padded, file);
-    }
-
-    fclose(f);
-    fclose(file);
-}
-
-void Histogram(const char* filename) {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) throw "Argument Exception";
-
-    unsigned char info[54];
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
-
-    int row_padded = (width * 3 + 3) & (~3);
-    unsigned char* data = new unsigned char[row_padded];
-
-    for (int k = 0; k < 256; k++)
-    {
-        for (int y = 0; y < height; y++)
-        {
-            fread(data, sizeof(unsigned char), row_padded, f);
-            for (int x = 0; x < width * 3; x += 3)
-            {
-                int c = (0.3 * (int)data[x] + 0.59 * (int)data[x + 1] + 0.11 * (int)data[x + 2]);
-                if (c == k) H[k]++;
-            }
-        }
-    }
 }
