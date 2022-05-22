@@ -13,14 +13,27 @@
 #define IDI_SMALL                       108
 #define IDD_HISTOGRAM                   108
 #define IDC_WINDOWSPROJECT1             109
+#define IDD_CONTRAST                    109
+#define IDD_COLORBALANCE                110
+#define IDD_MULTIBALANCE                111
 #define IDR_MAINFRAME                   128
 #define IDC_APPLY                       1000
 #define IDC_OK                          1001
 #define IDC_CANCEL                      1002
 #define IDC_COEFF                       1006
 #define IDC_COEFF_TEXT                  1007
-#define IDC_CHECK2                      1009
 #define IDC_CHECK_MODE                  1009
+#define IDC_COEFF_CONTRAST_TEXT         1010
+#define IDC_COEFF_CONTRAST              1011
+#define IDC_CHECK_CONTRAST_MODE         1012
+#define IDC_RADIO_R                     1016
+#define IDC_RADIO_G                     1017
+#define IDC_RADIO_B                     1018
+#define IDC_COEFF_CB                    1019
+#define IDC_RADIO_W                     1020
+#define IDC_COEFF_CB_R                  1021
+#define IDC_COEFF_CB_G                  1022
+#define IDC_COEFF_CB_B                  1023
 #define ID_Menu                         32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -35,6 +48,11 @@
 #define ID_EDIT_GRAYSCALE               32782
 #define ID_EDIT_NEGATIVE                32783
 #define ID_IMAGE_COLORHISTOGRAM         32784
+#define ID_EDIT_CONTRAST                32785
+#define ID_EDIT_COLORBALANCE            32786
+#define ID_EDIT_SHARPNESS               32787
+#define ID_EDIT_BLUR                    32788
+#define ID_EDIT_MULTICOLOR              32789
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -43,8 +61,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        129
-#define _APS_NEXT_COMMAND_VALUE         32785
-#define _APS_NEXT_CONTROL_VALUE         1010
+#define _APS_NEXT_COMMAND_VALUE         32790
+#define _APS_NEXT_CONTROL_VALUE         1022
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

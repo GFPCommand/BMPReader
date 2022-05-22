@@ -14,6 +14,7 @@ BITMAP bmi;
 std::wstring tmp_file;
 
 bool isLoaded = false;
+bool isSave = false;
 
 ImageEdit img;
 
@@ -21,7 +22,7 @@ wchar_t ChildName[] = _T("1");
 
 RGBQUAD rgb;
 
-RECT rc, histRc;
+RECT rc, histRc, backgroundRc;
 
 BOOL Line(HDC hdc, int x1, int y1, int x2, int y2);
 
@@ -32,6 +33,9 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Hist(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Bright(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    Contrast(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    ColorBalance(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    MultiColorBalance(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -40,8 +44,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-
-    // TODO: Разместите код здесь.
 
     // Инициализация глобальных строк
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -96,7 +98,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
+   hInst = hInstance;
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
@@ -114,9 +116,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static HWND hBtn; // дескриптор кнопки
-    static HWND hEdt1, hEdt2; // дескрипторы полей редактирования
-    static HWND hStat; // дескриптор статического текста
     switch (message)
     {
     case WM_CREATE:
@@ -125,7 +124,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
-            // Разобрать выбор в меню:
             switch (wmId)
             {
             case IDM_ABOUT:
@@ -170,6 +168,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 break;
             case IDM_SAVE:
+                isSave = true;
                 MessageBox(NULL, L"Success", L"File saving", MB_OK);
                 break;
             case IDM_SAVEAS:
@@ -190,6 +189,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 save_ofn.lpstrInitialDir = L"C\\Users\\User";
                 save_ofn.lpstrDefExt = L"";
                 save_ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+
+                isSave = true;
 
                 if (GetSaveFileName(&save_ofn)) {
                     MessageBox(NULL, szFile, L"File path", MB_OK);
@@ -234,6 +235,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     break;
                 }
                 break;
+            case ID_EDIT_CONTRAST:
+                if (tmp_file == L"") {
+                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
+                    break;
+                }
+                else {
+                    DialogBox(hInst, MAKEINTRESOURCE(IDD_CONTRAST), hWnd, Contrast);
+                    break;
+                }
+                break;
+            case ID_EDIT_COLORBALANCE:
+                if (tmp_file == L"") {
+                    MessageBox(NULL, L"NullReferenceException", L"CriticalError", MB_OK);
+                    break;
+                }
+                else {
+                    DialogBox(hInst, MAKEINTRESOURCE(IDD_COLORBALANCE), hWnd, ColorBalance);
+                    break;
+                }
+                break;
+            case ID_EDIT_MULTICOLOR:
+                if (tmp_file == L"") {
+                    MessageBox(NULL, L"NullReferenceException", L"CriticalError", MB_OK);
+                    break;
+                }
+                else {
+                    DialogBox(hInst, MAKEINTRESOURCE(IDD_MULTIBALANCE), hWnd, MultiColorBalance);
+                    break;
+                }
+                break;
             case ID_IMAGE_COLORHISTOGRAM:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_HISTOGRAM), hWnd, Hist);
                 break;
@@ -254,26 +285,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         HDC hdc = BeginPaint(hWnd, &ps);
         HDC cdc = CreateCompatibleDC(hdc);
         HBRUSH hbr = CreateSolidBrush(RGB(0, 0, 0));
+
         SelectObject(cdc, hbm1);
+
         GetClientRect(hWnd, &rc);
         GetClientRect(hWnd, &histRc);
+        GetClientRect(hWnd, &backgroundRc);
+
         SetRect(&histRc, 600, 16, 1112, 512);
+        SetRect(&backgroundRc, 599, 15, 1113, 513);
         SetRect(&rc, 16, 16, 512, 512);
+
         SetStretchBltMode(hdc, HALFTONE);
+
         StretchBlt(hdc, 16,16,rc.right, rc.bottom, cdc, 0,0,bmi.bmWidth, bmi.bmHeight, SRCCOPY);
+
         FrameRect(hdc, &rc, HBRUSH(CreateSolidBrush(RGB(0, 0, 0))));
         FrameRect(hdc, &histRc, HBRUSH(CreateSolidBrush(RGB(0, 0, 0))));
+        FrameRect(hdc, &backgroundRc, HBRUSH(CreateSolidBrush(RGB(0, 0, 0))));
+
         DeleteDC(cdc);
+
         if (isLoaded) {
-            
+
+            FillRect(hdc, &histRc, HBRUSH(CreateSolidBrush(RGB(255, 255, 255))));
+
             SelectObject(hdc, hbr);
 
             for (int i = 0; i < 256; i++)
             {
                 img.H[i] /= 200;
-                Line(hdc, 601 + i + 50, 512, 601 + i + 50, (512 - img.H[i]));
+                Line(hdc, 601 + i*1.5 + 50, 512, 601 + i*1.5 + 50, (512 - img.H[i]));
             }
         }
+
         EndPaint(hWnd, &ps);
     }
         break;
@@ -286,7 +331,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-// Обработчик сообщений для окна "О программе".
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -367,8 +411,169 @@ INT_PTR CALLBACK Bright(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
+INT_PTR CALLBACK Contrast(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDC_APPLY)
+        {
+            HWND check = GetDlgItem(hDlg, IDC_CHECK_CONTRAST_MODE);
+            HWND input = GetDlgItem(hDlg, IDC_COEFF_CONTRAST);
+
+            bool isMinus = (SendMessage(check, BM_GETCHECK, 0, 0) == BST_CHECKED) ? true : false;
+
+            std::string str(tmp_file.begin(), tmp_file.end());
+
+            const char* filename = str.c_str();
+
+            wchar_t str_coeff[5] = { 0 };
+
+            int coeff = 0;
+            GetWindowText(input, str_coeff, 5);
+            coeff = _wtoi(str_coeff);
+
+            img.Contrast(filename, coeff, isMinus);
+
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        else if (LOWORD(wParam) == IDCANCEL || LOWORD(wParam) == IDC_CANCEL) {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
+
+INT_PTR CALLBACK ColorBalance(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDC_APPLY)
+        {
+            HWND checkR, checkG, checkB, checkW;
+            HWND input;
+
+            checkR = GetDlgItem(hDlg, IDC_RADIO_R);
+            checkG = GetDlgItem(hDlg, IDC_RADIO_G);
+            checkB = GetDlgItem(hDlg, IDC_RADIO_B);
+            checkW = GetDlgItem(hDlg, IDC_RADIO_W);
+
+            input = GetDlgItem(hDlg, IDC_COEFF_CB);
+
+            std::string str(tmp_file.begin(), tmp_file.end());
+
+            const char* filename = str.c_str();
+
+            wchar_t str_coeff[5] = { 0 };
+
+            int coeff = 0;
+
+            GetWindowText(input, str_coeff, 5);
+
+            coeff = _wtoi(str_coeff);
+
+            if (IsDlgButtonChecked(hDlg, IDC_RADIO_R) == BST_CHECKED) {
+                img.ColorBalance(filename, coeff, 'R');
+
+                EndDialog(hDlg, LOWORD(wParam));
+                return (INT_PTR)TRUE;
+            }
+            else if (IsDlgButtonChecked(hDlg, IDC_RADIO_G) == BST_CHECKED) {
+                img.ColorBalance(filename, coeff, 'G');
+
+                EndDialog(hDlg, LOWORD(wParam));
+                return (INT_PTR)TRUE;
+            }
+            else if (IsDlgButtonChecked(hDlg, IDC_RADIO_B) == BST_CHECKED) {
+                img.ColorBalance(filename, coeff, 'B');
+
+                EndDialog(hDlg, LOWORD(wParam));
+                return (INT_PTR)TRUE;
+            }
+            else if (IsDlgButtonChecked(hDlg, IDC_RADIO_W) == BST_CHECKED) {
+                img.ColorBalance(filename, coeff, 'W');
+
+                EndDialog(hDlg, LOWORD(wParam));
+                return (INT_PTR)TRUE;
+            }
+
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        else if (LOWORD(wParam) == IDCANCEL || LOWORD(wParam) == IDC_CANCEL) {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
+
+INT_PTR CALLBACK MultiColorBalance(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDC_APPLY) {
+            HWND inputR, inputG, inputB;
+
+            inputR = GetDlgItem(hDlg, IDC_COEFF_CB_R);
+            inputG = GetDlgItem(hDlg, IDC_COEFF_CB_G);
+            inputB = GetDlgItem(hDlg, IDC_COEFF_CB_B);
+
+            std::string str(tmp_file.begin(), tmp_file.end());
+
+            const char* filename = str.c_str();
+
+            wchar_t str_coeff_R[5] = { 0 };
+            wchar_t str_coeff_G[5] = { 0 };
+            wchar_t str_coeff_B[5] = { 0 };
+
+            int coeff_R = 0;
+            int coeff_G = 0;
+            int coeff_B = 0;
+
+            GetWindowText(inputR, str_coeff_R, 5);
+            GetWindowText(inputG, str_coeff_G, 5);
+            GetWindowText(inputB, str_coeff_B, 5);
+
+            coeff_R = _wtoi(str_coeff_R);
+            coeff_G = _wtoi(str_coeff_G);
+            coeff_B = _wtoi(str_coeff_B);
+
+            img.MultiColorBalance(filename, coeff_R, coeff_G, coeff_B);
+
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        else if (LOWORD(wParam) == IDCANCEL || LOWORD(wParam) == IDC_CANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
+
 BOOL Line(HDC hdc, int x1, int y1, int x2, int y2)
 {
-    MoveToEx(hdc, x1, y1, NULL); //сделать текущими координаты x1, y1
-    return LineTo(hdc, x2, y2); //нарисовать линию
+    MoveToEx(hdc, x1, y1, NULL);
+    return LineTo(hdc, x2, y2);
 }

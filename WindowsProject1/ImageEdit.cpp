@@ -1,4 +1,3 @@
-#include "ImageEdit.h"
 #include "framework.h"
 
 void ImageEdit::Brightness(const char* filename, int coeff) {
@@ -9,15 +8,13 @@ void ImageEdit::Brightness(const char* filename, int coeff) {
         throw "IO Exception";
     }
 
-    unsigned char info[54];
-
     fread(info, sizeof(unsigned char), 54, f);
 
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
+    width = *(int*)&info[18];
+    height = *(int*)&info[22];
 
-    int row_padded = (width * 3 + 3) & (~3);
-    unsigned char* data = new unsigned char[row_padded];
+    row_padded = (width * 3 + 3) & (~3);
+    data = new unsigned char[row_padded];
 
     std::remove("brightness.bmp");
     FILE* file = fopen("brightness.bmp", "ab");
@@ -65,15 +62,13 @@ void ImageEdit::Grayscale(const char* filename) {
         throw "IO Exception";
     }
 
-    unsigned char info[54];
-
     fread(info, sizeof(unsigned char), 54, f);
 
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
+    width = *(int*)&info[18];
+    height = *(int*)&info[22];
 
-    int row_padded = (width * 3 + 3) & (~3);
-    unsigned char* data = new unsigned char[row_padded];
+    row_padded = (width * 3 + 3) & (~3);
+    data = new unsigned char[row_padded];
 
     std::remove("grayscale.bmp");
     FILE* file = fopen("grayscale.bmp", "ab");
@@ -108,15 +103,13 @@ void ImageEdit::Negative(const char* filename) {
         throw "IO Exception";
     }
 
-    unsigned char info[54];
-
     fread(info, sizeof(unsigned char), 54, f);
 
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
+    width = *(int*)&info[18];
+    height = *(int*)&info[22];
 
-    int row_padded = (width * 3 + 3) & (~3);
-    unsigned char* data = new unsigned char[row_padded];
+    row_padded = (width * 3 + 3) & (~3);
+    data = new unsigned char[row_padded];
 
     std::remove("negative.bmp");
     FILE* file = fopen("negative.bmp", "ab");
@@ -150,15 +143,13 @@ void ImageEdit::Histogram(const char* filename) {
         throw "IO Exception";
     }
 
-    unsigned char info[54];
-
     fread(info, sizeof(unsigned char), 54, f);
 
-    int width = *(int*)&info[18];
-    int height = *(int*)&info[22];
+    width = *(int*)&info[18];
+    height = *(int*)&info[22];
 
-    int row_padded = (width * 3 + 3) & (~3);
-    unsigned char* data = new unsigned char[row_padded];
+    row_padded = (width * 3 + 3) & (~3);
+    data = new unsigned char[row_padded];
 
     for (int k = 0; k < 256; k++)
     {
@@ -172,4 +163,224 @@ void ImageEdit::Histogram(const char* filename) {
             }
         }
     }
+}
+
+void ImageEdit::Contrast(const char* filename, int coeff, bool isMinus) {
+    FILE* f = fopen(filename, "rb");
+
+    if (f == NULL) {
+        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
+        throw "IO exception";
+    }
+
+    fread(info, sizeof(unsigned char), 54, f);
+
+    width = *(int*)&info[18];
+    height = *(int*)&info[22];
+
+    row_padded = (width * 3 + 3) & (~3);
+    data = new unsigned char[row_padded];
+
+    std::remove("contrast.bmp");
+    FILE* file = fopen("contrast.bmp", "ab");
+    if (file == NULL) throw "Argument Exception";
+
+    fwrite(info, sizeof(unsigned char), 54, file);
+
+    for (int i = 0; i < height; i++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int j = 0; j < width * 3; j += 3)
+        {
+            int tmp;
+
+            if (isMinus) {
+                tmp = data[j];
+                tmp = (tmp * (100 - coeff) + 128 * coeff) / 100;
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j] = tmp;
+
+                tmp = data[j + 1];
+                tmp = (tmp * (100 - coeff) + 128 * coeff) / 100;
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j + 1] = tmp;
+
+                tmp = data[j + 2];
+                tmp = (tmp * (100 - coeff) + 128 * coeff) / 100;
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j + 2] = tmp;
+            }
+            else {
+                if (coeff == 100) coeff = 99;
+                tmp = data[j];
+                tmp = (tmp * 100 - 128 * coeff) / (100 - coeff);
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j] = tmp;
+
+                tmp = data[j + 1];
+                tmp = (tmp * 100 - 128 * coeff) / (100 - coeff);
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j + 1] = tmp;
+
+                tmp = data[j + 2];
+                tmp = (tmp * 100 - 128 * coeff) / (100 - coeff);
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j + 2] = tmp;
+            }
+            
+        }
+        fwrite(data, sizeof(unsigned char), row_padded, file);
+    }
+
+    fclose(f);
+    fclose(file);
+}
+
+void ImageEdit::ColorBalance(const char* filename, int coeff, char state)
+{
+    FILE* f = fopen(filename, "rb");
+
+    if (f == NULL) {
+        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
+        throw "IO exception";
+    }
+
+    fread(info, sizeof(unsigned char), 54, f);
+
+    width = *(int*)&info[18];
+    height = *(int*)&info[22];
+
+    row_padded = (width * 3 + 3) & (~3);
+    data = new unsigned char[row_padded];
+
+    std::remove("balance.bmp");
+    FILE* file = fopen("balance.bmp", "ab");
+    if (file == NULL) throw "Argument Exception";
+
+    fwrite(info, sizeof(unsigned char), 54, file);
+
+    for (int i = 0; i < height; i++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+
+        for (int j = 0; j < width * 3; j += 3)
+        {
+            int tmp;
+            switch (state) {
+            case 'R':
+
+                tmp = data[j+2];
+                tmp = tmp + coeff * 128 / 100;
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j+2] = tmp;
+
+                break;
+            case 'G':
+
+                tmp = data[j + 1];
+                tmp = tmp + coeff * 128 / 100;
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j + 1] = tmp;
+
+                break;
+            case 'B':
+
+                tmp = data[j];
+                tmp = tmp + coeff * 128 / 100;
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j] = tmp;
+
+                break;
+            case 'W': //this feauture looks like brightness
+
+                tmp = data[j];
+                tmp = tmp + coeff * 128 / 100;
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j] = tmp;
+
+                tmp = data[j + 1];
+                tmp = tmp + coeff * 128 / 100;
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j + 1] = tmp;
+
+                tmp = data[j + 2];
+                tmp = tmp + coeff * 128 / 100;
+                if (tmp > 255) tmp = 255;
+                if (tmp < 0) tmp = 0;
+                data[j + 2] = tmp;
+                break;
+            }
+        }
+        fwrite(data, sizeof(unsigned char), row_padded, file);
+    }
+
+    fclose(f);
+    fclose(file);
+}
+
+void ImageEdit::MultiColorBalance(const char* filename, int R, int G, int B)
+{
+    FILE* f = fopen(filename, "rb");
+
+    if (f == NULL) {
+        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
+        throw "IO exception";
+    }
+
+    fread(info, sizeof(unsigned char), 54, f);
+
+    width = *(int*)&info[18];
+    height = *(int*)&info[22];
+
+    row_padded = (width * 3 + 3) & (~3);
+    data = new unsigned char[row_padded];
+
+    std::remove("multibalance.bmp");
+    FILE* file = fopen("multibalance.bmp", "ab");
+    if (file == NULL) throw "Argument Exception";
+
+    fwrite(info, sizeof(unsigned char), 54, file);
+
+    for (int i = 0; i < height; i++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+
+        for (int j = 0; j < width * 3; j += 3)
+        {
+            int tmp;
+
+            tmp = data[j];
+            tmp = tmp + B * 128 / 100;
+            if (tmp > 255) tmp = 255;
+            if (tmp < 0) tmp = 0;
+            data[j] = tmp;
+
+            tmp = data[j + 1];
+            tmp = tmp + G * 128 / 100;
+            if (tmp > 255) tmp = 255;
+            if (tmp < 0) tmp = 0;
+            data[j + 1] = tmp;
+
+            tmp = data[j + 2];
+            tmp = tmp + R * 128 / 100;
+            if (tmp > 255) tmp = 255;
+            if (tmp < 0) tmp = 0;
+            data[j + 2] = tmp;
+        }
+        fwrite(data, sizeof(unsigned char), row_padded, file);
+    }
+
+    fclose(f);
+    fclose(file);
 }
