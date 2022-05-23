@@ -16,7 +16,9 @@ void ImageEdit::Brightness(const char* filename, int coeff) {
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    std::remove("brightness.bmp");
+    file = "brightness.bmp";
+
+    std::remove(file);
     FILE* file = fopen("brightness.bmp", "ab");
     if (file == NULL) throw "Argument Exception";
 
@@ -70,7 +72,9 @@ void ImageEdit::Grayscale(const char* filename) {
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    std::remove("grayscale.bmp");
+    file = "grayscale.bmp";
+
+    std::remove(file);
     FILE* file = fopen("grayscale.bmp", "ab");
     if (file == NULL) throw "Argument Exception";
 
@@ -111,7 +115,9 @@ void ImageEdit::Negative(const char* filename) {
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    std::remove("negative.bmp");
+    file = "negative.bmp";
+
+    std::remove(file);
     FILE* file = fopen("negative.bmp", "ab");
     if (file == NULL) throw "Argument Exception";
 
@@ -181,7 +187,9 @@ void ImageEdit::Contrast(const char* filename, int coeff, bool isMinus) {
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    std::remove("contrast.bmp");
+    file = "contrast.bmp";
+
+    std::remove(file);
     FILE* file = fopen("contrast.bmp", "ab");
     if (file == NULL) throw "Argument Exception";
 
@@ -259,7 +267,9 @@ void ImageEdit::ColorBalance(const char* filename, int coeff, char state)
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    std::remove("balance.bmp");
+    file = "balance.bmp";
+
+    std::remove(file);
     FILE* file = fopen("balance.bmp", "ab");
     if (file == NULL) throw "Argument Exception";
 
@@ -346,7 +356,9 @@ void ImageEdit::MultiColorBalance(const char* filename, int R, int G, int B)
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    std::remove("multibalance.bmp");
+    file = "multibalance.bmp";
+
+    std::remove(file);
     FILE* file = fopen("multibalance.bmp", "ab");
     if (file == NULL) throw "Argument Exception";
 
@@ -383,4 +395,9 @@ void ImageEdit::MultiColorBalance(const char* filename, int R, int G, int B)
 
     fclose(f);
     fclose(file);
+}
+
+const char* ImageEdit::get_file()
+{
+    return file;
 }

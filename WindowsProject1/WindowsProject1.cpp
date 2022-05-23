@@ -16,6 +16,8 @@ std::wstring tmp_file;
 bool isLoaded = false;
 bool isSave = false;
 
+enum modes {Brightness = 0, Contrast, Colors, Multicolors} mode;
+
 ImageEdit img;
 
 wchar_t ChildName[] = _T("1");
@@ -170,6 +172,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_SAVE:
                 isSave = true;
                 MessageBox(NULL, L"Success", L"File saving", MB_OK);
+                //save in open file
+                std::remove(img.get_file());
+
                 break;
             case IDM_SAVEAS:
                 OPENFILENAME save_ofn;
@@ -194,8 +199,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if (GetSaveFileName(&save_ofn)) {
                     MessageBox(NULL, szFile, L"File path", MB_OK);
-                }
 
+                    std::wstring ws = szFile;
+
+                    std::string str(ws.begin(), ws.end());
+
+                    const char* filename = str.c_str();
+
+                    //save in new or exists file
+
+                    std::remove(filename);
+                }
+                
                 break;
             case ID_EDIT_BRIGHTNESS:
                 if (tmp_file == L"") {
