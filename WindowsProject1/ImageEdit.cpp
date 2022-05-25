@@ -16,10 +16,10 @@ void ImageEdit::Brightness(const char* filename, int coeff) {
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    file = "brightness.bmp";
+    fl = "brightness.bmp";
 
-    std::remove(file);
-    FILE* file = fopen("brightness.bmp", "ab");
+    std::remove(fl);
+    FILE* file = fopen(fl, "ab");
     if (file == NULL) throw "Argument Exception";
 
     fwrite(info, sizeof(unsigned char), 54, file);
@@ -72,10 +72,10 @@ void ImageEdit::Grayscale(const char* filename) {
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    file = "grayscale.bmp";
+    fl = "grayscale.bmp";
 
-    std::remove(file);
-    FILE* file = fopen("grayscale.bmp", "ab");
+    std::remove(fl);
+    FILE* file = fopen(fl, "ab");
     if (file == NULL) throw "Argument Exception";
 
     fwrite(info, sizeof(unsigned char), 54, file);
@@ -115,10 +115,10 @@ void ImageEdit::Negative(const char* filename) {
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    file = "negative.bmp";
+    fl = "negative.bmp";
 
-    std::remove(file);
-    FILE* file = fopen("negative.bmp", "ab");
+    std::remove(fl);
+    FILE* file = fopen(fl, "ab");
     if (file == NULL) throw "Argument Exception";
 
     fwrite(info, sizeof(unsigned char), 54, file);
@@ -187,10 +187,10 @@ void ImageEdit::Contrast(const char* filename, int coeff, bool isMinus) {
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    file = "contrast.bmp";
+    fl = "contrast.bmp";
 
-    std::remove(file);
-    FILE* file = fopen("contrast.bmp", "ab");
+    std::remove(fl);
+    FILE* file = fopen(fl, "ab");
     if (file == NULL) throw "Argument Exception";
 
     fwrite(info, sizeof(unsigned char), 54, file);
@@ -267,9 +267,9 @@ void ImageEdit::ColorBalance(const char* filename, int coeff, char state)
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    file = "balance.bmp";
+    fl = "balance.bmp";
 
-    std::remove(file);
+    std::remove(fl);
     FILE* file = fopen("balance.bmp", "ab");
     if (file == NULL) throw "Argument Exception";
 
@@ -356,10 +356,10 @@ void ImageEdit::MultiColorBalance(const char* filename, int R, int G, int B)
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    file = "multibalance.bmp";
+    fl = "multibalance.bmp";
 
-    std::remove(file);
-    FILE* file = fopen("multibalance.bmp", "ab");
+    std::remove(fl);
+    FILE* file = fopen(fl, "ab");
     if (file == NULL) throw "Argument Exception";
 
     fwrite(info, sizeof(unsigned char), 54, file);
@@ -399,5 +399,5 @@ void ImageEdit::MultiColorBalance(const char* filename, int R, int G, int B)
 
 const char* ImageEdit::get_file()
 {
-    return file;
+    return fl;
 }

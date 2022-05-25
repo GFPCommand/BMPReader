@@ -7,7 +7,7 @@ private:
 	unsigned char info[54];
 	unsigned char* data;
 	int width, height, row_padded;
-	const char* file;
+	const char* fl;
 
 public:
 	int H[256] = { 0 };
