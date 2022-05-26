@@ -14,7 +14,7 @@ BITMAP bmi;
 std::wstring tmp_file;
 
 bool isLoaded = false;
-bool isSave = false;
+bool isSave = true;
 
 int lastState = 0;
 
@@ -151,6 +151,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 ofn.lpstrDefExt = L"";
                 ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
+                isLoaded = true;
+
                 if (GetOpenFileName(&ofn))
                 {
                     std::wstring ws = szFileName;
@@ -167,18 +169,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                     img.Histogram(filename);
 
-                    isLoaded = true;
-                    isSave = true;
-
                     RedrawWindow(hWnd, &histRc, NULL, RDW_INVALIDATE);
                 }
                 break;
             case IDM_SAVE:
                 MessageBox(NULL, L"Success", L"File saving", MB_OK);
 
-                /*if (isLoaded && !isSave) {
-                    Save(hWnd, );
-                }*/
+                if (isLoaded && !isSave) {
+                    Save(hWnd, lastState);
+                }
 
                 break;
             case IDM_SAVEAS:
@@ -232,7 +231,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         int chk = MessageBox(NULL, L"File not saving. Save it now?", L"Error", MB_YESNO);
 
                         if (chk == IDYES) {
-                            Save(hWnd, Brightness);
+                            Save(hWnd, lastState);
                         }
                         else if (chk == IDNO) {
                             DialogBox(hInst, MAKEINTRESOURCE(IDD_BRIGHTNESS), hWnd, Bright);
@@ -255,13 +254,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         const char* filename = str.c_str();
 
                         img.Grayscale(filename);
+
+                        isSave = false;
+                        lastState = Grayscale;
+
                         break;
                     }
                     else {
                         int chk = MessageBox(NULL, L"File not saving. Save it now?", L"Error", MB_YESNO);
 
                         if (chk == IDYES) {
-                            Save(hWnd, Grayscale);
+                            Save(hWnd, lastState);
                         }
                         else if (chk == IDNO) {
                             std::string str(tmp_file.begin(), tmp_file.end());
@@ -269,6 +272,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             const char* filename = str.c_str();
 
                             img.Grayscale(filename);
+
+                            isSave = false;
+                            lastState = Grayscale;
+
                             break;
                         }
                     }
@@ -286,13 +293,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         const char* filename = str.c_str();
 
                         img.Negative(filename);
+
+                        isSave = false;
+                        lastState = Negative;
+
                         break;
                     }
                     else {
                         int chk = MessageBox(NULL, L"File not saving. Save it now?", L"Error", MB_YESNO);
 
                         if (chk == IDYES) {
-                            Save(hWnd, Negative);
+                            Save(hWnd, lastState);
                         }
                         else if (chk == IDNO) {
                             std::string str(tmp_file.begin(), tmp_file.end());
@@ -300,6 +311,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                             const char* filename = str.c_str();
 
                             img.Negative(filename);
+
+                            isSave = false;
+                            lastState = Negative;
+
                             break;
                         }
                     }
@@ -319,7 +334,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         int chk = MessageBox(NULL, L"File not saving. Save it now?", L"Error", MB_YESNO);
 
                         if (chk == IDYES) {
-                            Save(hWnd, ContrastF);
+                            Save(hWnd, lastState);
                         }
                         else if (chk == IDNO) {
                             DialogBox(hInst, MAKEINTRESOURCE(IDD_CONTRAST), hWnd, Contrast);
@@ -342,7 +357,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         int chk = MessageBox(NULL, L"File not saving. Save it now?", L"Error", MB_YESNO);
 
                         if (chk == IDYES) {
-                            Save(hWnd, Colors);
+                            Save(hWnd, lastState);
                         }
                         else if (chk == IDNO) {
                             DialogBox(hInst, MAKEINTRESOURCE(IDD_COLORBALANCE), hWnd, ColorBalance);
@@ -365,7 +380,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         int chk = MessageBox(NULL, L"File not saving. Save it now?", L"Error", MB_YESNO);
 
                         if (chk == IDYES) {
-                            Save(hWnd, Multicolors);
+                            Save(hWnd, lastState);
                         }
                         else if (chk == IDNO) {
                             DialogBox(hInst, MAKEINTRESOURCE(IDD_MULTIBALANCE), hWnd, MultiColorBalance);
@@ -509,6 +524,7 @@ INT_PTR CALLBACK Bright(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             img.Brightness(filename, coeff);
 
             isSave = false;
+            lastState = Brightness;
 
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
@@ -551,6 +567,7 @@ INT_PTR CALLBACK Contrast(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             img.Contrast(filename, coeff, isMinus);
 
             isSave = false;
+            lastState = ContrastF;
 
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
@@ -599,28 +616,19 @@ INT_PTR CALLBACK ColorBalance(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 
             if (IsDlgButtonChecked(hDlg, IDC_RADIO_R) == BST_CHECKED) {
                 img.ColorBalance(filename, coeff, 'R');
-
-                EndDialog(hDlg, LOWORD(wParam));
-                return (INT_PTR)TRUE;
             }
             else if (IsDlgButtonChecked(hDlg, IDC_RADIO_G) == BST_CHECKED) {
                 img.ColorBalance(filename, coeff, 'G');
-
-                EndDialog(hDlg, LOWORD(wParam));
-                return (INT_PTR)TRUE;
             }
             else if (IsDlgButtonChecked(hDlg, IDC_RADIO_B) == BST_CHECKED) {
                 img.ColorBalance(filename, coeff, 'B');
-
-                EndDialog(hDlg, LOWORD(wParam));
-                return (INT_PTR)TRUE;
             }
             else if (IsDlgButtonChecked(hDlg, IDC_RADIO_W) == BST_CHECKED) {
                 img.ColorBalance(filename, coeff, 'W');
-
-                EndDialog(hDlg, LOWORD(wParam));
-                return (INT_PTR)TRUE;
             }
+
+            isSave = false;
+            lastState = Colors;
 
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
@@ -672,6 +680,9 @@ INT_PTR CALLBACK MultiColorBalance(HWND hDlg, UINT message, WPARAM wParam, LPARA
 
             img.MultiColorBalance(filename, coeff_R, coeff_G, coeff_B);
 
+            isSave = false;
+            lastState = Multicolors;
+
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
         }
@@ -710,7 +721,7 @@ void Save(HWND hWnd, int state) {
         cmd += src;
         break;
     case 3:
-        src = "contraast.bmp";
+        src = "contrast.bmp";
         cmd += src;
         break;
     case 4:
