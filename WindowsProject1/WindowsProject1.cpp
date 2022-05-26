@@ -11,14 +11,15 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса глав�
 HBITMAP hbm1, hbm2;
 BITMAP bmi;
 
-std::wstring tmp_file;
+std::wstring tmp_file, save_as_file;
 
 bool isLoaded = false;
 bool isSave = true;
+bool isSaveAs = false;
 
 int lastState = 0;
 
-enum modes {Brightness = 0, Grayscale, Negative, ContrastF, Colors, Multicolors};
+enum modes {Normal = 0, Brightness, Grayscale, Negative, ContrastF, Colors, Multicolors};
 
 ImageEdit img;
 
@@ -173,46 +174,54 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 break;
             case IDM_SAVE:
-                MessageBox(NULL, L"Success", L"File saving", MB_OK);
+                if (isLoaded) {
+                    MessageBox(NULL, L"Success", L"File saving", MB_OK);
 
-                if (isLoaded && !isSave) {
-                    Save(hWnd, lastState);
+                    if (isLoaded && !isSave) {
+                        Save(hWnd, lastState);
+                    }
                 }
-
+                else {
+                    MessageBox(NULL, L"File not open!", L"Error", MB_OK);
+                }
+                
                 break;
             case IDM_SAVEAS:
-                OPENFILENAME save_ofn;
-                ZeroMemory(&save_ofn, sizeof(OPENFILENAME));
+                if (isLoaded) {
+                    OPENFILENAME save_ofn;
+                    ZeroMemory(&save_ofn, sizeof(OPENFILENAME));
 
-                wchar_t szFile[MAX_PATH];
-                ZeroMemory(szFile, MAX_PATH);
-                szFile[0] = 0;
+                    wchar_t szFile[MAX_PATH];
+                    ZeroMemory(szFile, MAX_PATH);
+                    szFile[0] = 0;
 
-                save_ofn.lStructSize = sizeof(OPENFILENAME);
-                save_ofn.hwndOwner = NULL;
-                save_ofn.lpstrFile = szFile;
-                save_ofn.nMaxFile = MAX_PATH;
-                save_ofn.lpstrFilter = L"BMP Files (*.bmp)\0*.bmp\0";
-                save_ofn.nFilterIndex = 3;
-                save_ofn.lpstrTitle = L"Save as";
-                save_ofn.lpstrInitialDir = L"C\\Users\\User";
-                save_ofn.lpstrDefExt = L"";
-                save_ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+                    save_ofn.lStructSize = sizeof(OPENFILENAME);
+                    save_ofn.hwndOwner = NULL;
+                    save_ofn.lpstrFile = szFile;
+                    save_ofn.nMaxFile = MAX_PATH;
+                    save_ofn.lpstrFilter = L"BMP Files (*.bmp)\0*.bmp\0";
+                    save_ofn.nFilterIndex = 3;
+                    save_ofn.lpstrTitle = L"Save as";
+                    save_ofn.lpstrInitialDir = L"C\\Users\\User";
+                    save_ofn.lpstrDefExt = L"";
+                    save_ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
 
-                isSave = true;
+                    isSave = true;
 
-                if (GetSaveFileName(&save_ofn)) {
-                    MessageBox(NULL, szFile, L"File path", MB_OK);
+                    if (GetSaveFileName(&save_ofn)) {
+                        MessageBox(NULL, L"Success", L"File saving", MB_OK);
 
-                    std::wstring ws = szFile;
+                        std::wstring ws = szFile;
 
-                    std::string str(ws.begin(), ws.end());
+                        save_as_file = ws;
 
-                    const char* filename = str.c_str();
+                        isSaveAs = true;
 
-                    //save in new or exists file
-
-                    std::remove(filename);
+                        Save(hWnd, lastState);
+                    }
+                }
+                else {
+                    MessageBox(NULL, L"File not open!", L"Error", MB_OK);
                 }
                 
                 break;
@@ -706,38 +715,58 @@ void Save(HWND hWnd, int state) {
     std::string cmd = "copy ";
     std::string src, dest;
 
+    std::string str(tmp_file.begin(), tmp_file.end());
+
+    const char* filename = str.c_str();
+
     switch (state)
     {
     case 0:
-        src = "brightness.bmp";
+        src = str;
         cmd += src;
         break;
     case 1:
-        src = "grayscale.bmp";
+        src = "brightness.bmp";
         cmd += src;
         break;
     case 2:
-        src = "negative.bmp";
+        src = "grayscale.bmp";
         cmd += src;
         break;
     case 3:
-        src = "contrast.bmp";
+        src = "negative.bmp";
         cmd += src;
         break;
     case 4:
-        src = "balance.bmp";
+        src = "contrast.bmp";
         cmd += src;
         break;
     case 5:
+        src = "balance.bmp";
+        cmd += src;
+        break;
+    case 6:
         src = "multibalance.bmp";
         cmd += src;
         break;
+    default:
+        break;
     }
 
-    cmd += " 1.bmp";
+    cmd += " ";
+
+    if (isSaveAs) {
+        std::string save_as_str(save_as_file.begin(), save_as_file.end());
+
+        const char* save_file = save_as_str.c_str();
+
+        cmd += save_file;
+    } else
+        cmd += filename;
 
     system(cmd.c_str());
-    std::remove(src.c_str());
+    if (state != 0)
+        std::remove(src.c_str());
 
     const wchar_t* file = tmp_file.c_str();
 
@@ -745,14 +774,12 @@ void Save(HWND hWnd, int state) {
 
     RedrawWindow(hWnd, &rc, NULL, RDW_INVALIDATE);
 
-    std::string str(tmp_file.begin(), tmp_file.end());
-
-    const char* filename = str.c_str();
-
     img.Histogram(filename);
 
     isLoaded = true;
     isSave = true;
+
+    lastState = Normal;
 
     RedrawWindow(hWnd, &histRc, NULL, RDW_INVALIDATE);
 }
