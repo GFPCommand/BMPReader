@@ -441,13 +441,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (isLoaded) {
 
+            int w = bmi.bmWidth;
+            int h = bmi.bmHeight;
+
+            int div;
+
+            if (w > h) div = (w % h * 1.1);
+            else div = (h % w * 1.1);
+
+            if (div == 0) div = 1;
+
             FillRect(hdc, &histRc, HBRUSH(CreateSolidBrush(RGB(255, 255, 255))));
 
             SelectObject(hdc, hbr);
 
             for (int i = 0; i < 256; i++)
             {
-                img.H[i] /= 200;
+                img.H[i] /= div;
                 Line(hdc, 601 + i*1.5 + 50, 512, 601 + i*1.5 + 50, (512 - img.H[i]));
             }
         }
