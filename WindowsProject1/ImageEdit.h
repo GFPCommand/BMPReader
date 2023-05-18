@@ -18,8 +18,6 @@ public:
 	void Contrast(const char*, int, bool);
 	void ColorBalance(const char*, int, char);
 	void MultiColorBalance(const char*, int, int, int);
-
-	const char* get_file();
 };
 
 #endif

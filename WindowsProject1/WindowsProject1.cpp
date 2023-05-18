@@ -1,7 +1,7 @@
 ﻿#include "framework.h"
 #include "WindowsProject1.h"
 
-#define MAX_LOADSTRING 100
+constexpr auto MAX_LOADSTRING = 100;
 
 // Глобальные переменные:
 HINSTANCE hInst;                                // текущий экземпляр
@@ -9,27 +9,31 @@ WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки за�
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 
 HBITMAP hbm1, hbm2;
-BITMAP bmi;
+BITMAP bmi; // структура для изображения
 
-std::wstring tmp_file, save_as_file;
+std::wstring tmp_file, save_as_file; // строка для файлов
 
+// флаги состояний
 bool isLoaded = false;
 bool isSave = true;
 bool isSaveAs = false;
 
 int lastState = 0;
 
+// режим работы
+
 enum modes {Normal = 0, Brightness, Grayscale, Negative, ContrastF, Colors, Multicolors};
 
+// создание объекта класса для работы с изображением
 ImageEdit img;
 
-wchar_t ChildName[] = _T("1");
-
-RGBQUAD rgb;
-
+// прямоугольные области для отрисовки
 RECT rc, histRc, backgroundRc, text1Rc, text2Rc;
 
+// функция для рисования линий
 BOOL Line(HDC hdc, int x1, int y1, int x2, int y2);
+
+// функция для сохранения файлов
 void Save(HWND, int);
 
 // Отправить объявления функций, включенных в этот модуль кода:
@@ -132,9 +136,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             switch (wmId)
             {
             case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About); // вывод спраки
                 break;
-            case IDM_OPEN:
+            case IDM_OPEN: // открытие файлов
                 OPENFILENAME ofn;
 
                 wchar_t szFileName[MAX_PATH];
@@ -172,7 +176,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     RedrawWindow(hWnd, &histRc, NULL, RDW_INVALIDATE);
                 }
                 break;
-            case IDM_SAVE:
+            case IDM_SAVE: // сохранение файла в то же место
                 if (isLoaded) {
                     MessageBox(NULL, L"Success", L"File saving", MB_OK);
 
@@ -185,7 +189,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 
                 break;
-            case IDM_SAVEAS:
+            case IDM_SAVEAS: // сохранение с конкретным путем
                 if (isLoaded) {
                     OPENFILENAME save_ofn;
                     ZeroMemory(&save_ofn, sizeof(OPENFILENAME));
@@ -224,7 +228,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 }
                 
                 break;
-            case ID_EDIT_BRIGHTNESS:
+            case ID_EDIT_BRIGHTNESS: // открытие настроек яркости
                 if (tmp_file == L"") {
                     MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
                     break;
@@ -250,7 +254,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     
                 }
                 break;
-            case ID_EDIT_GRAYSCALE:
+            case ID_EDIT_GRAYSCALE: // бинаризация изображения
                 if (tmp_file == L"") {
                     MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
                     break;
@@ -289,7 +293,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 break;
-            case ID_EDIT_NEGATIVE:
+            case ID_EDIT_NEGATIVE: // цветовое инвертирование изображения - негатив
                 if (tmp_file == L"") {
                     MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
                     break;
@@ -328,7 +332,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 break;
-            case ID_EDIT_CONTRAST:
+            case ID_EDIT_CONTRAST: // настройка контраста изображения
                 if (tmp_file == L"") {
                     MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
                     break;
@@ -351,7 +355,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 break;
-            case ID_EDIT_COLORBALANCE:
+            case ID_EDIT_COLORBALANCE: // настройка цветового баланса
                 if (tmp_file == L"") {
                     MessageBox(NULL, L"NullReferenceException", L"CriticalError", MB_OK);
                     break;
@@ -374,7 +378,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 break;
-            case ID_EDIT_MULTICOLOR:
+            case ID_EDIT_MULTICOLOR: // одновременное изменение цветовых параметров
                 if (tmp_file == L"") {
                     MessageBox(NULL, L"NullReferenceException", L"CriticalError", MB_OK);
                     break;
@@ -405,50 +409,59 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_PAINT:
+    case WM_PAINT: // отрисовка
     {
         
-        GetObject(hbm1, sizeof(BITMAP), &bmi);
+        GetObject(hbm1, sizeof(BITMAP), &bmi); // получение изображения
         
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-        HDC cdc = CreateCompatibleDC(hdc);
-        HBRUSH hbr = CreateSolidBrush(RGB(0, 0, 0));
+        PAINTSTRUCT ps; // структура дял возможности взаимодействовать с отрисовкой
+        HDC hdc = BeginPaint(hWnd, &ps); // подготовка окна приложения для отрисовки
+        HDC cdc = CreateCompatibleDC(hdc); // создание в ОЗУ контекста изображения
+        HBRUSH hbr = CreateSolidBrush(RGB(0, 0, 0)); // создание кисти
 
-        SelectObject(cdc, hbm1);
+        SelectObject(cdc, hbm1); // выбор bmp из памяти
 
+        // получение координат окна
         GetClientRect(hWnd, &rc);
         GetClientRect(hWnd, &histRc);
         GetClientRect(hWnd, &backgroundRc);
 
-        SetRect(&histRc, 600, 16, 1112, 512);
-        SetRect(&backgroundRc, 599, 15, 1113, 513);
+        // настройка размеров прямоугольников для рисования и их координаты
+        SetRect(&histRc, 650, 16, 1040, 512);
+        SetRect(&backgroundRc, 649, 15, 1041, 513);
         SetRect(&rc, 16, 16, 512, 512);
 
+        // установка режима растягивания изображения
         SetStretchBltMode(hdc, HALFTONE);
 
+        // копирование изображения из памяти в целевой прямоугольник
         StretchBlt(hdc, 16,16,rc.right, rc.bottom, cdc, 0,0,bmi.bmWidth, bmi.bmHeight, SRCCOPY);
 
+        // рисование границ прямоугольных областей
         FrameRect(hdc, &rc, HBRUSH(CreateSolidBrush(RGB(0, 0, 0))));
         FrameRect(hdc, &histRc, HBRUSH(CreateSolidBrush(RGB(0, 0, 0))));
         FrameRect(hdc, &backgroundRc, HBRUSH(CreateSolidBrush(RGB(0, 0, 0))));
 
+        // выгрузка изображения из памяти
         DeleteDC(cdc);
 
-        if (isLoaded) {
+        if (isLoaded) { // если изображение получено, выводим его гистограмму
 
             int w = bmi.bmWidth;
             int h = bmi.bmHeight;
 
             float div;
 
-            if (w > h) div = (w % h) / 2;
-            else div = (h % w) / 2;
+            //установка соотношения сторон изображения для удобного вывода гистограммы
+            if (w > h) div = (w % h) / 3;
+            else div = (h % w) / 3;
 
-            if (div == 0) div = 1;
+            if (div == 0) div = 1; // для предотвращения деления на 0
 
+            // заливаем область белым цветом
             FillRect(hdc, &histRc, HBRUSH(CreateSolidBrush(RGB(255, 255, 255))));
 
+            // выбираем кисть для рисования
             SelectObject(hdc, hbr);
 
             for (int i = 0; i < 256; i++)
@@ -462,17 +475,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         TCHAR text2[] = L"255";
 
         GetClientRect(hWnd, &text1Rc);
-        SetRect(&text1Rc, 600, 525, 650, 600);
+        SetRect(&text1Rc, 650, 525, 700, 600);
         DrawText(hdc, text1, ARRAYSIZE(text1), &text1Rc, DT_SINGLELINE);
         
         GetClientRect(hWnd, &text2Rc);
-        SetRect(&text2Rc, 1090, 525, 1125, 600);
+        SetRect(&text2Rc, 1020, 525, 1070, 600);
         DrawText(hdc, text2, ARRAYSIZE(text2), &text2Rc, DT_SINGLELINE);
 
         EndPaint(hWnd, &ps);
-
-        
-
     }
         break;
     case WM_DESTROY:

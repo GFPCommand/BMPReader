@@ -1,57 +1,62 @@
 #include "framework.h"
 
 void ImageEdit::Brightness(const char* filename, int coeff) {
-    FILE* f = fopen(filename, "rb");
+    FILE* f = fopen(filename, "rb"); // подключение к файлу
 
     if (f == NULL) {
         MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
         throw "IO Exception";
     }
 
-    fread(info, sizeof(unsigned char), 54, f);
+    fread(info, sizeof(unsigned char), 54, f); // чтение данных о файле
 
-    width = *(int*)&info[18];
-    height = *(int*)&info[22];
+    width = *(int*)&info[18]; // получение ширины изображени€
+    height = *(int*)&info[22]; // получение высоты изображени€
 
-    row_padded = (width * 3 + 3) & (~3);
-    data = new unsigned char[row_padded];
+    row_padded = (width * 3 + 3) & (~3); // получение количества строк
+    data = new unsigned char[row_padded]; // создание массива дл€ чтени€ данных
 
-    fl = "brightness.bmp";
+    fl = "brightness.bmp"; // файл сохранени€
 
     std::remove(fl);
-    FILE* file = fopen(fl, "ab");
+    FILE* file = fopen(fl, "ab"); // создание файла сохранени€
     if (file == NULL) {
         throw "Argument Exception";
         exit(1);
     }
 
-    fwrite(info, sizeof(unsigned char), 54, file);
+    fwrite(info, sizeof(unsigned char), 54, file); // копирование данных дл€ bmp
 
     for (int i = 0; i < height; i++)
     {
-        fread(data, sizeof(unsigned char), row_padded, f);
+        fread(data, sizeof(unsigned char), row_padded, f); // построчное считывание данных
         for (int j = 0; j < width * 3; j += 3)
         {
             int tmp;
 
+            // побитова€ обработка дл€ каждого цветового канала
+            //blue
             tmp = data[j];
             tmp += coeff * 128 / 100;
             if (tmp > 255) tmp = 255;
             if (tmp < 0) tmp = 0;
             data[j] = tmp;
 
+            //green
             tmp = data[j + 1];
             tmp += coeff * 128 / 100;
             if (tmp > 255) tmp = 255;
             if (tmp < 0) tmp = 0;
             data[j + 1] = tmp;
 
+            //red
             tmp = data[j + 2];
             tmp += coeff * 128 / 100;
             if (tmp > 255) tmp = 255;
             if (tmp < 0) tmp = 0;
             data[j + 2] = tmp;
         }
+        // запись измененных данных в файл
         fwrite(data, sizeof(unsigned char), row_padded, file);
     }
 
@@ -88,6 +93,8 @@ void ImageEdit::Grayscale(const char* filename) {
         fread(data, sizeof(unsigned char), row_padded, f);
         for (int j = 0; j < width * 3; j += 3)
         {
+            // проведение бинаризации
+            // (B + G + R) / 3
             int k = ((int)data[j] + (int)data[j + 1] + (int)data[j + 2]) / 3;
             data[j] = k;    //blue
             data[j + 1] = k; //green
@@ -129,6 +136,7 @@ void ImageEdit::Negative(const char* filename) {
         fread(data, sizeof(unsigned char), row_padded, f);
         for (int j = 0; j < width * 3; j += 3)
         {
+            // инвертирование цветов - негатив
             data[j] = (255 - (int)data[j]);    //blue
             data[j + 1] = (255 - (int)data[j + 1]); //green
             data[j + 2] = (255 - (int)data[j + 2]); //red
@@ -158,17 +166,15 @@ void ImageEdit::Histogram(const char* filename) {
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
 
-    for (int k = 0; k < 256; k++)
+    int brightness = 0;
+
+    for (int y = 0; y < height; y++)
     {
-        H[k] = 0;
-        for (int y = 0; y < height; y++)
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int x = 0; x < width; x++)
         {
-            fread(data, sizeof(unsigned char), row_padded, f);
-            for (int x = 0; x < width * 3; x += 3)
-            {
-                int c = (0.3 * (int)data[x] + 0.59 * (int)data[x + 1] + 0.11 * (int)data[x + 2]);
-                if (c == k) H[k]++;
-            }
+            brightness = ((int)data[x] * 0.11 + (int)data[x + 1] * 0.59 + (int)data[x + 2] * 0.3); // беретс€ параметр €ркости, вычисл€емый дл€ кадого пиксел€ по формуле I = 0.3 * R + 0.59 * G + 0.11 * B
+            H[brightness]++; // запись количества пикселей на каждый уровень €ркости
         }
     }
 }
@@ -204,21 +210,22 @@ void ImageEdit::Contrast(const char* filename, int coeff, bool isMinus) {
         {
             int tmp;
 
+            // coeff - процент изменени€, N
             if (isMinus) {
                 tmp = data[j];
-                tmp = (tmp * (100 - coeff) + 128 * coeff) / 100;
+                tmp = (tmp * (100 - coeff) + 128 * coeff) / 100; // (B * (100 - N) + 128 * N) / 100
                 if (tmp > 255) tmp = 255;
                 if (tmp < 0) tmp = 0;
                 data[j] = tmp;
 
                 tmp = data[j + 1];
-                tmp = (tmp * (100 - coeff) + 128 * coeff) / 100;
+                tmp = (tmp * (100 - coeff) + 128 * coeff) / 100; // (G * (100 - N) + 128 * N) / 100
                 if (tmp > 255) tmp = 255;
                 if (tmp < 0) tmp = 0;
                 data[j + 1] = tmp;
 
                 tmp = data[j + 2];
-                tmp = (tmp * (100 - coeff) + 128 * coeff) / 100;
+                tmp = (tmp * (100 - coeff) + 128 * coeff) / 100; // (R * (100 - N) + 128 * N) / 100
                 if (tmp > 255) tmp = 255;
                 if (tmp < 0) tmp = 0;
                 data[j + 2] = tmp;
@@ -226,19 +233,19 @@ void ImageEdit::Contrast(const char* filename, int coeff, bool isMinus) {
             else {
                 if (coeff == 100) coeff = 99;
                 tmp = data[j];
-                tmp = (tmp * 100 - 128 * coeff) / (100 - coeff);
+                tmp = (tmp * 100 - 128 * coeff) / (100 - coeff); // (B * 100 - 128 * N) / (100 - N)
                 if (tmp > 255) tmp = 255;
                 if (tmp < 0) tmp = 0;
                 data[j] = tmp;
 
                 tmp = data[j + 1];
-                tmp = (tmp * 100 - 128 * coeff) / (100 - coeff);
+                tmp = (tmp * 100 - 128 * coeff) / (100 - coeff); // (G * 100 - 128 * N) / (100 - N)
                 if (tmp > 255) tmp = 255;
                 if (tmp < 0) tmp = 0;
                 data[j + 1] = tmp;
 
                 tmp = data[j + 2];
-                tmp = (tmp * 100 - 128 * coeff) / (100 - coeff);
+                tmp = (tmp * 100 - 128 * coeff) / (100 - coeff); // (R * 100 - 128 * N) / (100 - N)
                 if (tmp > 255) tmp = 255;
                 if (tmp < 0) tmp = 0;
                 data[j + 2] = tmp;
@@ -284,11 +291,11 @@ void ImageEdit::ColorBalance(const char* filename, int coeff, char state)
         for (int j = 0; j < width * 3; j += 3)
         {
             int tmp;
-            switch (state) {
+            switch (state) { // выбор цветового канала д€л обработки
             case 'R':
 
                 tmp = data[j+2];
-                tmp = tmp + coeff * 128 / 100;
+                tmp = tmp + coeff * 128 / 100; // (R + 128 * N) / 100
                 if (tmp > 255) tmp = 255;
                 if (tmp < 0) tmp = 0;
                 data[j+2] = tmp;
@@ -297,7 +304,7 @@ void ImageEdit::ColorBalance(const char* filename, int coeff, char state)
             case 'G':
 
                 tmp = data[j + 1];
-                tmp = tmp + coeff * 128 / 100;
+                tmp = tmp + coeff * 128 / 100; // (G + 128 * N) / 100
                 if (tmp > 255) tmp = 255;
                 if (tmp < 0) tmp = 0;
                 data[j + 1] = tmp;
@@ -306,13 +313,13 @@ void ImageEdit::ColorBalance(const char* filename, int coeff, char state)
             case 'B':
 
                 tmp = data[j];
-                tmp = tmp + coeff * 128 / 100;
+                tmp = tmp + coeff * 128 / 100; // (B + 128 * N) / 100
                 if (tmp > 255) tmp = 255;
                 if (tmp < 0) tmp = 0;
                 data[j] = tmp;
 
                 break;
-            case 'W': //this feauture looks like brightness
+            case 'W': //ѕроход по всем каналам сразу. јналогично изменению €ркости
 
                 tmp = data[j];
                 tmp = tmp + coeff * 128 / 100;
@@ -374,6 +381,8 @@ void ImageEdit::MultiColorBalance(const char* filename, int R, int G, int B)
         {
             int tmp;
 
+            // ќдновременное изменение цветовых параметров. ƒл€ каждого цветового канала свое значение
+
             tmp = data[j];
             tmp = tmp + B * 128 / 100;
             if (tmp > 255) tmp = 255;
@@ -397,9 +406,4 @@ void ImageEdit::MultiColorBalance(const char* filename, int R, int G, int B)
 
     fclose(f);
     fclose(file);
-}
-
-const char* ImageEdit::get_file()
-{
-    return fl;
 }
