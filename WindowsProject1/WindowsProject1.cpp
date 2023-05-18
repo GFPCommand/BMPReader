@@ -27,7 +27,7 @@ wchar_t ChildName[] = _T("1");
 
 RGBQUAD rgb;
 
-RECT rc, histRc, backgroundRc;
+RECT rc, histRc, backgroundRc, text1Rc, text2Rc;
 
 BOOL Line(HDC hdc, int x1, int y1, int x2, int y2);
 void Save(HWND, int);
@@ -37,7 +37,6 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    Hist(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Bright(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Contrast(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    ColorBalance(HWND, UINT, WPARAM, LPARAM);
@@ -398,9 +397,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
                 break;
-            case ID_IMAGE_COLORHISTOGRAM:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_HISTOGRAM), hWnd, Hist);
-                break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
@@ -444,10 +440,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             int w = bmi.bmWidth;
             int h = bmi.bmHeight;
 
-            int div;
+            float div;
 
-            if (w > h) div = (w % h * 1.1);
-            else div = (h % w * 1.1);
+            if (w > h) div = (w % h) / 2;
+            else div = (h % w) / 2;
 
             if (div == 0) div = 1;
 
@@ -462,7 +458,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
 
+        TCHAR text1[] = L"0";
+        TCHAR text2[] = L"255";
+
+        GetClientRect(hWnd, &text1Rc);
+        SetRect(&text1Rc, 600, 525, 650, 600);
+        DrawText(hdc, text1, ARRAYSIZE(text1), &text1Rc, DT_SINGLELINE);
+        
+        GetClientRect(hWnd, &text2Rc);
+        SetRect(&text2Rc, 1090, 525, 1125, 600);
+        DrawText(hdc, text2, ARRAYSIZE(text2), &text2Rc, DT_SINGLELINE);
+
         EndPaint(hWnd, &ps);
+
+        
+
     }
         break;
     case WM_DESTROY:
@@ -475,25 +485,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
-
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
-}
-
-INT_PTR CALLBACK Hist(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
     switch (message)

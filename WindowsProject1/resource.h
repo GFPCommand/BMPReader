@@ -47,7 +47,6 @@
 #define ID_EDIT_BRIGHTNESS              32781
 #define ID_EDIT_GRAYSCALE               32782
 #define ID_EDIT_NEGATIVE                32783
-#define ID_IMAGE_COLORHISTOGRAM         32784
 #define ID_EDIT_CONTRAST                32785
 #define ID_EDIT_COLORBALANCE            32786
 #define ID_EDIT_SHARPNESS               32787

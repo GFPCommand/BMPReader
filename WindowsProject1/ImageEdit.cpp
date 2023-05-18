@@ -20,7 +20,10 @@ void ImageEdit::Brightness(const char* filename, int coeff) {
 
     std::remove(fl);
     FILE* file = fopen(fl, "ab");
-    if (file == NULL) throw "Argument Exception";
+    if (file == NULL) {
+        throw "Argument Exception";
+        exit(1);
+    }
 
     fwrite(info, sizeof(unsigned char), 54, file);
 
@@ -97,8 +100,6 @@ void ImageEdit::Grayscale(const char* filename) {
     fclose(file);
 }
 
-
-
 void ImageEdit::Negative(const char* filename) {
     FILE* f = fopen(filename, "rb");
 
@@ -159,6 +160,7 @@ void ImageEdit::Histogram(const char* filename) {
 
     for (int k = 0; k < 256; k++)
     {
+        H[k] = 0;
         for (int y = 0; y < height; y++)
         {
             fread(data, sizeof(unsigned char), row_padded, f);
