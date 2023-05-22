@@ -1,20 +1,9 @@
 #include "framework.h"
 
+FILE *f;
+
 void ImageEdit::Brightness(const char* filename, int coeff) {
-    FILE* f = fopen(filename, "rb"); // подключение к файлу
-
-    if (f == NULL) {
-        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
-        throw "IO Exception";
-    }
-
-    fread(info, sizeof(unsigned char), 54, f); // чтение данных о файле
-
-    width = *(int*)&info[18]; // получение ширины изображения
-    height = *(int*)&info[22]; // получение высоты изображения
-
-    row_padded = (width * 3 + 3) & (~3); // получение количества строк
-    data = new unsigned char[row_padded]; // создание массива для чтения данных
+    OpenFile(filename);
 
     fl = "brightness.bmp"; // файл сохранения
 
@@ -65,20 +54,7 @@ void ImageEdit::Brightness(const char* filename, int coeff) {
 }
 
 void ImageEdit::Grayscale(const char* filename) {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) {
-        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
-        throw "IO Exception";
-    }
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    width = *(int*)&info[18];
-    height = *(int*)&info[22];
-
-    row_padded = (width * 3 + 3) & (~3);
-    data = new unsigned char[row_padded];
+    OpenFile(filename);
 
     fl = "grayscale.bmp";
 
@@ -108,20 +84,7 @@ void ImageEdit::Grayscale(const char* filename) {
 }
 
 void ImageEdit::Negative(const char* filename) {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) {
-        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
-        throw "IO Exception";
-    }
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    width = *(int*)&info[18];
-    height = *(int*)&info[22];
-
-    row_padded = (width * 3 + 3) & (~3);
-    data = new unsigned char[row_padded];
+    OpenFile(filename);
 
     fl = "negative.bmp";
 
@@ -148,20 +111,8 @@ void ImageEdit::Negative(const char* filename) {
     fclose(file);
 }
 
-
-
 void ImageEdit::Histogram(const char* filename) {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) {
-        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
-        throw "IO Exception";
-    }
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    width = *(int*)&info[18];
-    height = *(int*)&info[22];
+    OpenFile(filename);
 
     row_padded = (width * 3 + 3) & (~3);
     data = new unsigned char[row_padded];
@@ -180,20 +131,7 @@ void ImageEdit::Histogram(const char* filename) {
 }
 
 void ImageEdit::Contrast(const char* filename, int coeff, bool isMinus) {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) {
-        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
-        throw "IO exception";
-    }
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    width = *(int*)&info[18];
-    height = *(int*)&info[22];
-
-    row_padded = (width * 3 + 3) & (~3);
-    data = new unsigned char[row_padded];
+    OpenFile(filename);
 
     fl = "contrast.bmp";
 
@@ -261,20 +199,7 @@ void ImageEdit::Contrast(const char* filename, int coeff, bool isMinus) {
 
 void ImageEdit::ColorBalance(const char* filename, int coeff, char state)
 {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) {
-        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
-        throw "IO exception";
-    }
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    width = *(int*)&info[18];
-    height = *(int*)&info[22];
-
-    row_padded = (width * 3 + 3) & (~3);
-    data = new unsigned char[row_padded];
+    OpenFile(filename);
 
     fl = "balance.bmp";
 
@@ -350,20 +275,7 @@ void ImageEdit::ColorBalance(const char* filename, int coeff, char state)
 
 void ImageEdit::MultiColorBalance(const char* filename, int R, int G, int B)
 {
-    FILE* f = fopen(filename, "rb");
-
-    if (f == NULL) {
-        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
-        throw "IO exception";
-    }
-
-    fread(info, sizeof(unsigned char), 54, f);
-
-    width = *(int*)&info[18];
-    height = *(int*)&info[22];
-
-    row_padded = (width * 3 + 3) & (~3);
-    data = new unsigned char[row_padded];
+    OpenFile(filename);
 
     fl = "multibalance.bmp";
 
@@ -406,4 +318,27 @@ void ImageEdit::MultiColorBalance(const char* filename, int R, int G, int B)
 
     fclose(f);
     fclose(file);
+}
+
+void ImageEdit::OpenFile(const char* filename) {
+    f = fopen(filename, "rb"); // подключение к файлу
+
+    if (f == NULL) {
+        MessageBox(NULL, L"Error while file opening!", L"Critical error", MB_OK);
+        throw "IO Exception";
+    }
+
+    fread(info, sizeof(unsigned char), 54, f); // чтение данных о файле
+
+    width = *(int*)&info[18]; // получение ширины изображения
+    height = *(int*)&info[22]; // получение высоты изображения
+
+    bitPerPixel = *(int*)&info[28];
+
+    colorsCount = *(int*)&info[46];
+
+    filesize = *(int*)&info[2];
+
+    row_padded = (width * 3 + 3) & (~3); // получение количества строк
+    data = new unsigned char[row_padded]; // создание массива для чтения данных
 }

@@ -17,6 +17,7 @@
 #define IDD_COLORBALANCE                110
 #define IDD_MULTIBALANCE                111
 #define IDR_MAINFRAME                   128
+#define IDD_FILE_INFO                   129
 #define IDC_APPLY                       1000
 #define IDC_OK                          1001
 #define IDC_CANCEL                      1002
@@ -33,7 +34,12 @@
 #define IDC_RADIO_W                     1020
 #define IDC_COEFF_CB_R                  1021
 #define IDC_COEFF_CB_G                  1022
+#define IDC_STATIC_FILESIZE             1022
 #define IDC_COEFF_CB_B                  1023
+#define IDC_STATIC_FILE_WH              1023
+#define IDC_STATIC_BIT_PIXEL            1024
+#define IDC_STATIC_COLORS               1025
+#define IDC_STATIC_PIXEL_AMOUNT         1026
 #define ID_Menu                         32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -52,6 +58,7 @@
 #define ID_EDIT_SHARPNESS               32787
 #define ID_EDIT_BLUR                    32788
 #define ID_EDIT_MULTICOLOR              32789
+#define ID_HELP_FILEINFO                32790
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -59,9 +66,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        129
-#define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         1022
+#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_COMMAND_VALUE         32791
+#define _APS_NEXT_CONTROL_VALUE         1027
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

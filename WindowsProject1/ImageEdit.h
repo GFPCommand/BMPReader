@@ -6,10 +6,15 @@ class ImageEdit
 private:
 	unsigned char info[54];
 	unsigned char* data;
-	int width, height, row_padded;
+	int row_padded;
 	const char* fl;
+	void OpenFile(const char*);
 
 public:
+	int width, height;
+	int filesize;
+	int bitPerPixel;
+	int colorsCount;
 	int H[256] = { 0 };
 	void Brightness(const char*, int);
 	void Grayscale(const char*);

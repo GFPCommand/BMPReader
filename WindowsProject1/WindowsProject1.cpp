@@ -7,11 +7,22 @@ constexpr auto MAX_LOADSTRING = 100;
 HINSTANCE hInst;                                // текущий экземпляр
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
+HMENU menu;
 
 HBITMAP hbm1, hbm2;
 BITMAP bmi; // структура для изображения
 
 std::wstring tmp_file, save_as_file; // строка для файлов
+
+HWND fileInfoWindowPixelAmount;
+
+int pxCount;
+
+TCHAR pixelCount[256];
+TCHAR bitsPerPixel[256];
+TCHAR usedColors[256];
+TCHAR fileSize[256];
+TCHAR widthHeght[256];
 
 // флаги состояний
 bool isLoaded = false;
@@ -28,7 +39,7 @@ enum modes {Normal = 0, Brightness, Grayscale, Negative, ContrastF, Colors, Mult
 ImageEdit img;
 
 // прямоугольные области для отрисовки
-RECT rc, histRc, backgroundRc, text1Rc, text2Rc;
+RECT rc, histRc, backgroundRc, text1Rc, text2Rc, pixelCountRc;
 
 // функция для рисования линий
 BOOL Line(HDC hdc, int x1, int y1, int x2, int y2);
@@ -45,6 +56,7 @@ INT_PTR CALLBACK    Bright(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    Contrast(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    ColorBalance(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MultiColorBalance(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    FileInformation(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -78,6 +90,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }
+
     return (int) msg.wParam;
 }
 
@@ -116,6 +129,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
+
+   menu = GetMenu(hWnd);
+
+   EnableMenuItem(menu, IDM_SAVE, MF_DISABLED);
+   EnableMenuItem(menu, IDM_SAVEAS, MF_DISABLED);
+
+   EnableMenuItem(menu, ID_EDIT_BRIGHTNESS, MF_DISABLED);
+   EnableMenuItem(menu, ID_EDIT_GRAYSCALE, MF_DISABLED);
+   EnableMenuItem(menu, ID_EDIT_NEGATIVE, MF_DISABLED);
+   EnableMenuItem(menu, ID_EDIT_CONTRAST, MF_DISABLED);
+   EnableMenuItem(menu, ID_EDIT_COLORBALANCE, MF_DISABLED);
+   EnableMenuItem(menu, ID_EDIT_MULTICOLOR, MF_DISABLED);
+
+   EnableMenuItem(menu, ID_HELP_FILEINFO, MF_DISABLED);
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -156,6 +183,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
                 isLoaded = true;
+
+                EnableMenuItem(menu, IDM_SAVE, MF_ENABLED);
+                EnableMenuItem(menu, IDM_SAVEAS, MF_ENABLED);
+
+                EnableMenuItem(menu, ID_EDIT_BRIGHTNESS, MF_ENABLED);
+                EnableMenuItem(menu, ID_EDIT_GRAYSCALE, MF_ENABLED);
+                EnableMenuItem(menu, ID_EDIT_NEGATIVE, MF_ENABLED);
+                EnableMenuItem(menu, ID_EDIT_CONTRAST, MF_ENABLED);
+                EnableMenuItem(menu, ID_EDIT_COLORBALANCE, MF_ENABLED);
+                EnableMenuItem(menu, ID_EDIT_MULTICOLOR, MF_ENABLED);
+
+                EnableMenuItem(menu, ID_HELP_FILEINFO, MF_ENABLED);
 
                 if (GetOpenFileName(&ofn))
                 {
@@ -230,7 +269,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             case ID_EDIT_BRIGHTNESS: // открытие настроек яркости
                 if (tmp_file == L"") {
-                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
+                    MessageBox(NULL, L"File not open!", L"Critical error", MB_OK);
                     break;
                 }
                 else {
@@ -256,7 +295,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             case ID_EDIT_GRAYSCALE: // бинаризация изображения
                 if (tmp_file == L"") {
-                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
+                    MessageBox(NULL, L"File not open!", L"Critical error", MB_OK);
                     break;
                 }
                 else {
@@ -295,7 +334,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             case ID_EDIT_NEGATIVE: // цветовое инвертирование изображения - негатив
                 if (tmp_file == L"") {
-                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
+                    MessageBox(NULL, L"File not open!", L"Critical error", MB_OK);
                     break;
                 }
                 else {
@@ -334,7 +373,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             case ID_EDIT_CONTRAST: // настройка контраста изображения
                 if (tmp_file == L"") {
-                    MessageBox(NULL, L"NullReferenceException", L"Critical error", MB_OK);
+                    MessageBox(NULL, L"File not open!", L"Critical error", MB_OK);
                     break;
                 }
                 else {
@@ -357,7 +396,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             case ID_EDIT_COLORBALANCE: // настройка цветового баланса
                 if (tmp_file == L"") {
-                    MessageBox(NULL, L"NullReferenceException", L"CriticalError", MB_OK);
+                    MessageBox(NULL, L"File not open!", L"Critical error", MB_OK);
                     break;
                 }
                 else {
@@ -380,7 +419,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             case ID_EDIT_MULTICOLOR: // одновременное изменение цветовых параметров
                 if (tmp_file == L"") {
-                    MessageBox(NULL, L"NullReferenceException", L"CriticalError", MB_OK);
+                    MessageBox(NULL, L"File not open!", L"Critical error", MB_OK);
                     break;
                 }
                 else {
@@ -400,6 +439,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                     }
                 }
+                break;
+            case ID_HELP_FILEINFO:
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_FILE_INFO), hWnd, FileInformation);
                 break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
@@ -447,8 +489,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (isLoaded) { // если изображение получено, выводим его гистограмму
 
-            int w = bmi.bmWidth;
-            int h = bmi.bmHeight;
+            int w = img.width;
+            int h = img.height;            
 
             float div;
 
@@ -500,6 +542,47 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
+
+INT_PTR CALLBACK FileInformation(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        pxCount = img.width * img.height;
+
+        _stprintf(pixelCount, TEXT("%d px"), pxCount);
+        fileInfoWindowPixelAmount = GetDlgItem(hDlg, IDC_STATIC_PIXEL_AMOUNT);
+        SetWindowText(fileInfoWindowPixelAmount, pixelCount);
+
+        _stprintf(bitsPerPixel, TEXT("%d bit/px"), img.bitPerPixel);
+        fileInfoWindowPixelAmount = GetDlgItem(hDlg, IDC_STATIC_BIT_PIXEL);
+        SetWindowText(fileInfoWindowPixelAmount, bitsPerPixel);
+
+        _stprintf(usedColors, TEXT("%d colors"), img.colorsCount);
+        fileInfoWindowPixelAmount = GetDlgItem(hDlg, IDC_STATIC_COLORS);
+        SetWindowText(fileInfoWindowPixelAmount, usedColors);
+
+        _stprintf(fileSize, TEXT("%d Kb"), img.filesize / 1024);
+        fileInfoWindowPixelAmount = GetDlgItem(hDlg, IDC_STATIC_FILESIZE);
+        SetWindowText(fileInfoWindowPixelAmount, fileSize);
+
+        _stprintf(widthHeght, TEXT("%dx%d px"), img.width, img.height);
+        fileInfoWindowPixelAmount = GetDlgItem(hDlg, IDC_STATIC_FILE_WH);
+        SetWindowText(fileInfoWindowPixelAmount, widthHeght);
+
         return (INT_PTR)TRUE;
 
     case WM_COMMAND:
