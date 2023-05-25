@@ -2,6 +2,64 @@
 
 FILE *f;
 
+void ImageEdit::Histogram(const char* filename) {
+    OpenFile(filename);
+
+    row_padded = (width * 3 + 3) & (~3);
+    data = new unsigned char[row_padded];
+
+    int brightness = 0;
+
+    for (int y = 0; y < height; y++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int x = 0; x < width; x++)
+        {
+            brightness = ((int)(data[x] * 0.11) + (int)(data[x + 1] * 0.59) + (int)(data[x + 2] * 0.3)); // берется параметр яркости, вычисляемый для кадого пикселя по формуле I = 0.3 * R + 0.59 * G + 0.11 * B
+            H[brightness]++; // запись количества пикселей на каждый уровень яркости
+        }
+    }
+}
+
+void ImageEdit::MultiColorHistogram(const char* filename) {
+    OpenFile(filename);
+
+    row_padded = (width * 3 + 3) & (~3);
+    data = new unsigned char[row_padded];
+
+    int brightness = 0;
+
+    for (int y = 0; y < height; y++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int x = 0; x < width; x++)
+        {
+            brightness = ((int)(data[x + 2] * 0.3)); // берется параметр яркости, вычисляемый для кадого пикселя по формуле I = 0.3 * R + 0.59 * G + 0.11 * B
+            H_R[brightness]++; // запись количества пикселей на каждый уровень яркости
+        }
+    }
+
+    for (int y = 0; y < height; y++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int x = 0; x < width; x++)
+        {
+            brightness = ((int)((int)(data[x + 1] * 0.59))); // берется параметр яркости, вычисляемый для кадого пикселя по формуле I = 0.3 * R + 0.59 * G + 0.11 * B
+            H_G[brightness]++; // запись количества пикселей на каждый уровень яркости
+        }
+    }
+
+    for (int y = 0; y < height; y++)
+    {
+        fread(data, sizeof(unsigned char), row_padded, f);
+        for (int x = 0; x < width; x++)
+        {
+            brightness = ((int)(data[x] * 0.11)); // берется параметр яркости, вычисляемый для кадого пикселя по формуле I = 0.3 * R + 0.59 * G + 0.11 * B
+            H_B[brightness]++; // запись количества пикселей на каждый уровень яркости
+        }
+    }
+}
+
 void ImageEdit::Brightness(const char* filename, int coeff) {
     OpenFile(filename);
 
@@ -109,25 +167,6 @@ void ImageEdit::Negative(const char* filename) {
 
     fclose(f);
     fclose(file);
-}
-
-void ImageEdit::Histogram(const char* filename) {
-    OpenFile(filename);
-
-    row_padded = (width * 3 + 3) & (~3);
-    data = new unsigned char[row_padded];
-
-    int brightness = 0;
-
-    for (int y = 0; y < height; y++)
-    {
-        fread(data, sizeof(unsigned char), row_padded, f);
-        for (int x = 0; x < width; x++)
-        {
-            brightness = ((int)data[x] * 0.11 + (int)data[x + 1] * 0.59 + (int)data[x + 2] * 0.3); // берется параметр яркости, вычисляемый для кадого пикселя по формуле I = 0.3 * R + 0.59 * G + 0.11 * B
-            H[brightness]++; // запись количества пикселей на каждый уровень яркости
-        }
-    }
 }
 
 void ImageEdit::Contrast(const char* filename, int coeff, bool isMinus) {
@@ -338,6 +377,8 @@ void ImageEdit::OpenFile(const char* filename) {
     colorsCount = *(int*)&info[46];
 
     filesize = *(int*)&info[2];
+
+    compression = *(int*)&info[30];
 
     row_padded = (width * 3 + 3) & (~3); // получение количества строк
     data = new unsigned char[row_padded]; // создание массива для чтения данных

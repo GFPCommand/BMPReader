@@ -15,11 +15,16 @@ public:
 	int filesize;
 	int bitPerPixel;
 	int colorsCount;
+	int compression;
 	int H[256] = { 0 };
+	int H_R[256] = { 0 };
+	int H_G[256] = { 0 };
+	int H_B[256] = { 0 };
+	void Histogram(const char*);
+	void MultiColorHistogram(const char*);
 	void Brightness(const char*, int);
 	void Grayscale(const char*);
 	void Negative(const char*);
-	void Histogram(const char*);
 	void Contrast(const char*, int, bool);
 	void ColorBalance(const char*, int, char);
 	void MultiColorBalance(const char*, int, int, int);

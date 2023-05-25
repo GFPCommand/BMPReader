@@ -23,6 +23,8 @@ TCHAR bitsPerPixel[256];
 TCHAR usedColors[256];
 TCHAR fileSize[256];
 TCHAR widthHeght[256];
+TCHAR *compressionType;
+LPTSTR lpsz;
 
 // флаги состояний
 bool isLoaded = false;
@@ -57,6 +59,7 @@ INT_PTR CALLBACK    Contrast(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    ColorBalance(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    MultiColorBalance(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    FileInformation(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    MultiColorHistograms(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -122,8 +125,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance;
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+   HWND hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+      CW_USEDEFAULT, 0, 1100, 700, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -143,6 +146,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    EnableMenuItem(menu, ID_EDIT_MULTICOLOR, MF_DISABLED);
 
    EnableMenuItem(menu, ID_HELP_FILEINFO, MF_DISABLED);
+   EnableMenuItem(menu, ID_HELP_MULTICOLOR_HISTOGRAM, MF_DISABLED);
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -182,22 +186,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 ofn.lpstrDefExt = L"";
                 ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
-                isLoaded = true;
-
-                EnableMenuItem(menu, IDM_SAVE, MF_ENABLED);
-                EnableMenuItem(menu, IDM_SAVEAS, MF_ENABLED);
-
-                EnableMenuItem(menu, ID_EDIT_BRIGHTNESS, MF_ENABLED);
-                EnableMenuItem(menu, ID_EDIT_GRAYSCALE, MF_ENABLED);
-                EnableMenuItem(menu, ID_EDIT_NEGATIVE, MF_ENABLED);
-                EnableMenuItem(menu, ID_EDIT_CONTRAST, MF_ENABLED);
-                EnableMenuItem(menu, ID_EDIT_COLORBALANCE, MF_ENABLED);
-                EnableMenuItem(menu, ID_EDIT_MULTICOLOR, MF_ENABLED);
-
-                EnableMenuItem(menu, ID_HELP_FILEINFO, MF_ENABLED);
-
                 if (GetOpenFileName(&ofn))
                 {
+                    isLoaded = true;
+
+                    EnableMenuItem(menu, IDM_SAVE, MF_ENABLED);
+                    EnableMenuItem(menu, IDM_SAVEAS, MF_ENABLED);
+
+                    EnableMenuItem(menu, ID_EDIT_BRIGHTNESS, MF_ENABLED);
+                    EnableMenuItem(menu, ID_EDIT_GRAYSCALE, MF_ENABLED);
+                    EnableMenuItem(menu, ID_EDIT_NEGATIVE, MF_ENABLED);
+                    EnableMenuItem(menu, ID_EDIT_CONTRAST, MF_ENABLED);
+                    EnableMenuItem(menu, ID_EDIT_COLORBALANCE, MF_ENABLED);
+                    EnableMenuItem(menu, ID_EDIT_MULTICOLOR, MF_ENABLED);
+
+                    EnableMenuItem(menu, ID_HELP_FILEINFO, MF_ENABLED);
+                    EnableMenuItem(menu, ID_HELP_MULTICOLOR_HISTOGRAM, MF_ENABLED);
+
                     std::wstring ws = szFileName;
 
                     tmp_file = ws;
@@ -208,7 +213,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                     std::string str(tmp_file.begin(), tmp_file.end());
 
-                    const char* filename = str.c_str();
+                    const char *filename = str.c_str();
 
                     img.Histogram(filename);
 
@@ -302,7 +307,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     if (isSave) {
                         std::string str(tmp_file.begin(), tmp_file.end());
 
-                        const char* filename = str.c_str();
+                        const char *filename = str.c_str();
 
                         img.Grayscale(filename);
 
@@ -320,7 +325,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         else if (chk == IDNO) {
                             std::string str(tmp_file.begin(), tmp_file.end());
 
-                            const char* filename = str.c_str();
+                            const char *filename = str.c_str();
 
                             img.Grayscale(filename);
 
@@ -341,7 +346,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     if (isSave) {
                         std::string str(tmp_file.begin(), tmp_file.end());
 
-                        const char* filename = str.c_str();
+                        const char *filename = str.c_str();
 
                         img.Negative(filename);
 
@@ -359,7 +364,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         else if (chk == IDNO) {
                             std::string str(tmp_file.begin(), tmp_file.end());
 
-                            const char* filename = str.c_str();
+                            const char *filename = str.c_str();
 
                             img.Negative(filename);
 
@@ -443,6 +448,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case ID_HELP_FILEINFO:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_FILE_INFO), hWnd, FileInformation);
                 break;
+            case ID_HELP_MULTICOLOR_HISTOGRAM:
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_MULTICOLOR_HISTOGRAMS), hWnd, MultiColorHistograms);
+                break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
@@ -469,8 +477,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         GetClientRect(hWnd, &backgroundRc);
 
         // настройка размеров прямоугольников для рисования и их координаты
-        SetRect(&histRc, 650, 16, 1040, 512);
-        SetRect(&backgroundRc, 649, 15, 1041, 513);
+        SetRect(&histRc, 650, 151, 1040, 512);
+        SetRect(&backgroundRc, 649, 150, 1041, 513);
         SetRect(&rc, 16, 16, 512, 512);
 
         // установка режима растягивания изображения
@@ -490,13 +498,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (isLoaded) { // если изображение получено, выводим его гистограмму
 
             int w = img.width;
-            int h = img.height;            
+            int h = img.height;
 
             float div;
 
             //установка соотношения сторон изображения для удобного вывода гистограммы
-            if (w > h) div = (w % h) / 3;
-            else div = (h % w) / 3;
+            if (w > h) div = (w % h) * 0.175;
+            else div = (h % w) * 0.175;
 
             if (div == 0) div = 1; // для предотвращения деления на 0
 
@@ -523,6 +531,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         GetClientRect(hWnd, &text2Rc);
         SetRect(&text2Rc, 1020, 525, 1070, 600);
         DrawText(hdc, text2, ARRAYSIZE(text2), &text2Rc, DT_SINGLELINE);
+
+        DeleteObject(hbr);
 
         EndPaint(hWnd, &ps);
     }
@@ -582,6 +592,36 @@ INT_PTR CALLBACK FileInformation(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
         _stprintf(widthHeght, TEXT("%dx%d px"), img.width, img.height);
         fileInfoWindowPixelAmount = GetDlgItem(hDlg, IDC_STATIC_FILE_WH);
         SetWindowText(fileInfoWindowPixelAmount, widthHeght);
+        
+        switch (img.compression)
+        {
+            case 0:
+                compressionType = new TCHAR[256];
+
+                _tcscpy(compressionType, L"BI_RGB no compression");
+
+                fileInfoWindowPixelAmount = GetDlgItem(hDlg, IDC_STATIC_COMPRESSION_TYPE);
+                SetWindowText(fileInfoWindowPixelAmount, compressionType);
+                break;
+            case 1:
+                compressionType = new TCHAR[256];
+
+                _tcscpy(compressionType, L"BI_RLE8 8bit RLE encoding");
+
+                fileInfoWindowPixelAmount = GetDlgItem(hDlg, IDC_STATIC_COMPRESSION_TYPE);
+                SetWindowText(fileInfoWindowPixelAmount, compressionType);
+                break;
+            case 2:
+                compressionType = new TCHAR[256];
+
+                _tcscpy(compressionType, L"BI_RLE4 4bit encoding");
+
+                fileInfoWindowPixelAmount = GetDlgItem(hDlg, IDC_STATIC_COMPRESSION_TYPE);
+                SetWindowText(fileInfoWindowPixelAmount, compressionType);
+                break;
+            default:
+                break;
+        }
 
         return (INT_PTR)TRUE;
 
@@ -591,6 +631,107 @@ INT_PTR CALLBACK FileInformation(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
             EndDialog(hDlg, LOWORD(wParam));
             return (INT_PTR)TRUE;
         }
+        break;
+    }
+    return (INT_PTR)FALSE;
+}
+
+INT_PTR CALLBACK MultiColorHistograms(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    RECT histRc_R, histRc_G, histRc_B;
+
+    std::string str(tmp_file.begin(), tmp_file.end());
+
+    const char* filename = str.c_str();
+
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        RedrawWindow(hDlg, nullptr, NULL, RDW_INVALIDATE);
+        return (INT_PTR)TRUE;
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDCANCEL || LOWORD(wParam) == IDC_CANCEL) {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+    case WM_PAINT:
+        img.MultiColorHistogram(filename);
+
+        PAINTSTRUCT ps; // структура дял возможности взаимодействовать с отрисовкой
+        HDC hdc = BeginPaint(hDlg, &ps); // подготовка окна приложения для отрисовки
+        HBRUSH hbr_R = CreateSolidBrush(RGB(255, 0, 0)); // создание кисти
+        HBRUSH hbr_G = CreateSolidBrush(RGB(0, 255, 0)); // создание кисти
+        HBRUSH hbr_B = CreateSolidBrush(RGB(0, 0, 255)); // создание кисти
+        
+        HPEN hp_R = CreatePen(PS_SOLID, 1, RGB(255, 0, 0)); // создание пера
+        HPEN hp_G = CreatePen(PS_SOLID, 1, RGB(0, 255, 0)); // создание пера
+        HPEN hp_B = CreatePen(PS_SOLID, 1, RGB(0, 0, 255)); // создание пера
+
+        GetClientRect(hDlg, &histRc_R);
+        GetClientRect(hDlg, &histRc_G);
+        GetClientRect(hDlg, &histRc_B);
+
+        SetRect(&histRc_R, 16, 16, 250, 250);
+        SetRect(&histRc_G, 16, 260, 250, 500);
+        SetRect(&histRc_B, 260, 16, 510, 250);
+
+        if (isLoaded) {
+            int w = img.width;
+            int h = img.height;
+
+            float div;
+
+            //установка соотношения сторон изображения для удобного вывода гистограммы
+            if (w > h) div = (w % h) * 0.5;
+            else div = (h % w) * 0.5;
+
+            if (div == 0) div = 0.01; // для предотвращения деления на 0
+
+            FillRect(hdc, &histRc_R, HBRUSH(CreateSolidBrush(RGB(255, 255, 255))));
+
+            SelectObject(hdc, hp_R);
+
+            for (int i = 0; i < 256; i++)
+            {
+                img.H_R[i] /= div;
+                img.H_R[i] = 250 - img.H_R[i] > 16 ? img.H_R[i] : 234;
+                Line(hdc, 16 + i * 1.5 + 5, 249, 16 + i * 1.5 + 5, (250 - img.H_R[i]));
+            }
+
+            FillRect(hdc, &histRc_G, HBRUSH(CreateSolidBrush(RGB(255, 255, 255))));
+
+            SelectObject(hdc, hp_G);
+
+            for (int i = 0; i < 256; i++)
+            {
+                img.H_G[i] /= div;
+                img.H_G[i] = 500 - img.H_G[i] > 260 ? img.H_G[i] : 234;
+                Line(hdc, 16 + i * 1.5 + 5, 499, 16 + i * 1.5 + 5, (500 - img.H_G[i]));
+            }
+
+            FillRect(hdc, &histRc_B, HBRUSH(CreateSolidBrush(RGB(255, 255, 255))));
+
+            SelectObject(hdc, hp_B);
+
+            for (int i = 0; i < 256; i++)
+            {
+                img.H_B[i] /= div;
+                img.H_B[i] = 250 - img.H_B[i] > 16 ? img.H_B[i] : 234;
+                Line(hdc, 260 + i * 1.5 + 5, 249, 260 + i * 1.5 + 5, (250 - img.H_B[i]));
+            }
+        }
+
+        FrameRect(hdc, &histRc_R, hbr_R);
+        FrameRect(hdc, &histRc_G, hbr_G);
+        FrameRect(hdc, &histRc_B, hbr_B);
+
+        DeleteObject(hbr_R);
+        DeleteObject(hbr_G);
+        DeleteObject(hbr_B);
+
+        EndPaint(hDlg, &ps);
+
         break;
     }
     return (INT_PTR)FALSE;
@@ -614,7 +755,7 @@ INT_PTR CALLBACK Bright(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             
             std::string str(tmp_file.begin(), tmp_file.end());
 
-            const char* filename = str.c_str();
+            const char *filename = str.c_str();
 
             wchar_t str_coeff[5] = { 0 };
 
@@ -637,6 +778,7 @@ INT_PTR CALLBACK Bright(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             return (INT_PTR)TRUE;
         }
         break;
+    
     }
     return (INT_PTR)FALSE;
 }

@@ -3,6 +3,7 @@
 // Используется WindowsProject1.rc
 //
 #define IDC_MYICON                      2
+#define IDD_MULTICOLOR_HISTOGRAMS       9
 #define IDD_BRIGHTNESS                  101
 #define IDD_WINDOWSPROJECT1_DIALOG      102
 #define IDS_APP_TITLE                   103
@@ -40,6 +41,8 @@
 #define IDC_STATIC_BIT_PIXEL            1024
 #define IDC_STATIC_COLORS               1025
 #define IDC_STATIC_PIXEL_AMOUNT         1026
+#define IDC_STATIC_COLORS2              1027
+#define IDC_STATIC_COMPRESSION_TYPE     1027
 #define ID_Menu                         32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -59,6 +62,8 @@
 #define ID_EDIT_BLUR                    32788
 #define ID_EDIT_MULTICOLOR              32789
 #define ID_HELP_FILEINFO                32790
+#define ID_HELP_MULTICOLORHISTOGRAM     32791
+#define ID_HELP_MULTICOLOR_HISTOGRAM    32792
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -66,8 +71,8 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        130
-#define _APS_NEXT_COMMAND_VALUE         32791
+#define _APS_NEXT_RESOURCE_VALUE        131
+#define _APS_NEXT_COMMAND_VALUE         32793
 #define _APS_NEXT_CONTROL_VALUE         1027
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
